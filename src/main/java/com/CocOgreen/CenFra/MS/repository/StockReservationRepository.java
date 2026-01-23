@@ -1,4 +1,9 @@
 package com.CocOgreen.CenFra.MS.repository;
 
-public interface StockReservationRepository {
+import com.CocOgreen.CenFra.MS.entity.StockReservation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface StockReservationRepository extends JpaRepository<StockReservation, Integer> {
 }
