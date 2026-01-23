@@ -1,0 +1,13 @@
+package com.CocOgreen.CenFra.MS;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CenFraMsApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CenFraMsApplication.class, args);
+	}
+
+}
