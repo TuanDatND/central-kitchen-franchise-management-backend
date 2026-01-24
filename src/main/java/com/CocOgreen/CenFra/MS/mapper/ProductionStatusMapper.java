@@ -5,7 +5,6 @@ import com.CocOgreen.CenFra.MS.entity.ProductionStatus;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
-public interface ProductionStatusMapper {
-    ProductionStatusDTO toDTO(ProductionStatus entity);
-    ProductionStatus toEntity(ProductionStatusDTO dto);
+public interface ProductionStatusMapper  extends GenericMapper<ProductionStatus, ProductionStatusDTO> {
+
 }

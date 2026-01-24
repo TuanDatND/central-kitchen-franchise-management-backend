@@ -13,8 +13,8 @@ import java.util.List;
 public class PurchaseOrder extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "po_id")
-    private Integer poId;
+    @Column(name = "pro_id")
+    private Integer proId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")

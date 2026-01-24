@@ -29,5 +29,4 @@ public class RecipeDetail {
     @JoinColumn(name = "input_item_id")
     private Item item;
 
-
 }

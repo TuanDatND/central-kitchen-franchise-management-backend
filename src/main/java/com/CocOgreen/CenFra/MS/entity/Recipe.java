@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -30,6 +31,6 @@ public class Recipe extends BaseEntity {
     private Item outputItem;
 
     @OneToMany(mappedBy = "recipe")
-    private Set<RecipeDetail> recipeDetail;
+    private List<RecipeDetail> recipeDetail;
 
 }
