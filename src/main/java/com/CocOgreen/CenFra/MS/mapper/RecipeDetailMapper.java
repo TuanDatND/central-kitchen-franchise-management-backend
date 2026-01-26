@@ -12,18 +12,13 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface RecipeDetailMapper extends GenericMapper<RecipeDetail, RecipeDetailDTO>  {
     @Override
-    @Mapping(source = "Item.itemId", target = "inputItemId")
-    @Mapping(source = "Item.itemName", target = "inputItemName")
+    @Mapping(source = "item.itemId", target = "inputItemId")
+    @Mapping(source = "item.itemName", target = "inputItemName")
     RecipeDetailDTO toDto(RecipeDetail entity);
 
     @Override
-    @Mapping(source = "outputItemId", target = "outputItem.id")
+    @Mapping(source = "inputItemId", target = "item.itemId")
     RecipeDetail toEntity(RecipeDetailDTO dto);
 
-    @AfterMapping
-    default void linkDetails(@MappingTarget Recipe recipe) {
-        if (recipe.getDetails() != null) {
-            recipe.getDetails().forEach(detail -> detail.setRecipe(recipe));
-        }
-    }
+
 }

@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.cache.spi.support.AbstractReadWriteAccess;
 
-import javax.xml.stream.Location;
 import java.math.BigDecimal;
 
 @Entity
@@ -26,7 +25,7 @@ public class StockReservation extends  BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id", nullable = false)
-    private Location location; // Bếp thực hiện sản xuất
+    private Location location;
 
     @Column
     private BigDecimal reservedQty;

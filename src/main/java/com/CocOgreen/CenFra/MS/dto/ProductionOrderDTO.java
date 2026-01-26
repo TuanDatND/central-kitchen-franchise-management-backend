@@ -11,8 +11,10 @@ public class ProductionOrderDTO {
     private Integer locationId;    // Bếp nào nấu
     private String locationName;
 
-    private Integer recipeId;      // Nấu theo công thức nào
-    private String recipeName;
+    // Nấu theo công thức nào
+    private Integer recipeId;
+    //tên công thức
+    private String productName;
 
     private BigDecimal planQty;    // Định nấu bao nhiêu
     private BigDecimal actualQty;  // Thực tế thu được bao nhiêu
