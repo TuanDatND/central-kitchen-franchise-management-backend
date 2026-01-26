@@ -1,22 +1,23 @@
 package com.CocOgreen.CenFra.MS.mapper;
 
 import com.CocOgreen.CenFra.MS.dto.RecipeDetailDTO;
+import com.CocOgreen.CenFra.MS.dto.StockReservationDTO;
 import com.CocOgreen.CenFra.MS.entity.RecipeDetail;
+import com.CocOgreen.CenFra.MS.entity.StockReservation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
-public interface StockReservationMapper extends GenericMapper<RecipeDetail, RecipeDetailDTO> {
+public interface StockReservationMapper extends GenericMapper<StockReservation, StockReservationDTO> {
 
     @Override
-    @Mapping(source = "Item.itemID", target = "itemId")
-    @Mapping(source = "Item.itemName", target = "itemName")
-    @Mapping(source = "Location.locationID", target = "locationId")
-    RecipeDetailDTO toDto(RecipeDetail entity);
+    @Mapping(source = "item.itemId", target = "itemId")
+    @Mapping(source = "item.itemName", target = "itemName")
+    @Mapping(source = "location.locationId", target = "locationId")
+    StockReservationDTO toDto(StockReservation entity);
 
-    @Override
-    @Mapping(source = "itemId", target = "Item.itemID")
-    @Mapping(source = "itemName", target = "Item.itemName")
-    @Mapping(source = "locationId", target = "Location.locationID")
-    RecipeDetail toEntity(RecipeDetailDTO dto);
+    @Mapping(source = "itemId", target = "item.itemId")
+    @Mapping(source = "itemName", target = "item.itemName")
+    @Mapping(source = "locationId", target = "location.locationId")
+    StockReservation toEntity(StockReservationDTO dto);
 }

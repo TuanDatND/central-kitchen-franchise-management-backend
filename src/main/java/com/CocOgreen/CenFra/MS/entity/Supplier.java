@@ -17,7 +17,7 @@ public class Supplier extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "supplier_id")
-    private Integer id;
+    private Integer supplierId;
 
     @Column(name = "supplier_name", nullable = false)
     private String supplierName;

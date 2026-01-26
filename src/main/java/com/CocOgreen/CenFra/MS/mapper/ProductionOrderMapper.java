@@ -7,26 +7,26 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ProductionOrderMapper extends GenericMapper<ProductionOrder, ProductionOrderDTO> {
-   @Override
-   @Mapping(source = "Location.locationId", target = "locationId")
-   @Mapping(source = "Location.locationName", target = "locationName")
-   @Mapping(source = "Recipe.recipeId", target = "recipeId")
-   @Mapping(source = "Recipe.recipeName", target = "recipeName")
-   @Mapping(source = "ProductionStatus.statusName", target = "statusName")
-   @Mapping(source = "ProductionStatus.statusId", target = "statusId")
-   @Mapping(source = "createdBy.id", target = "createdById")
-   @Mapping(source = "createdBy.fullName", target = "createdByName")
-   @Mapping(source = "modifiedBy.id", target = "modifiedById")
-   @Mapping(source = "modifiedBy.fullName", target = "modifiedByName")
-   ProductionOrderDTO toDto(ProductionOrder productionOrder);
+    @Override
+    @Mapping(source = "location.locationId", target = "locationId")
+    @Mapping(source = "location.locationName", target = "locationName")
+    @Mapping(source = "recipe.outputItem.itemName", target = "productName")
+    @Mapping(source = "status.code", target = "statusName")
+    @Mapping(source = "status.productionStatusID", target = "statusId")
+//   @Mapping(source = "createdBy.id", target = "createdById")
+//   @Mapping(source = "createdBy.fullName", target = "createdByName")
+//   @Mapping(source = "modifiedBy.id", target = "modifiedById")
+//   @Mapping(source = "modifiedBy.fullName", target = "modifiedByName")
+    ProductionOrderDTO toDto(ProductionOrder productionOrder);
 
-   @Override
-   @Mapping(source = "locationId", target = "location.id")
-   @Mapping(source = "recipeId", target = "recipe.id")
-   @Mapping(source = "statusId", target = "status.id")
-   @Mapping(target = "createdBy", ignore = true)
-   @Mapping(target = "modifiedBy", ignore = true)
-   @Mapping(target = "createdAt", ignore = true)
-   @Mapping(target = "modifiedAt", ignore = true)
-   ProductionOrder toEntity(ProductionOrderDTO productionOrderDTO);
+    @Override
+    @Mapping(source = "locationId", target = "location.locationId")
+    @Mapping(source = "recipeId", target = "recipe.recipeId")
+    @Mapping(source = "statusId", target = "status.productionStatusID")
+    @Mapping(source = "statusName", target = "status.code")
+//   @Mapping(target = "createdBy", ignore = true)
+//   @Mapping(target = "modifiedBy", ignore = true)
+//   @Mapping(target = "createdAt", ignore = true)
+//   @Mapping(target = "modifiedAt", ignore = true)
+    ProductionOrder toEntity(ProductionOrderDTO productionOrderDTO);
 }
