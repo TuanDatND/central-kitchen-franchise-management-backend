@@ -20,10 +20,10 @@ public interface RecipeMapper extends GenericMapper<Recipe,RecipeDTO> {
     @Mapping(source = "outputItemId", target = "outputItem.itemId")
     Recipe toEntity(RecipeDTO dto);
 
-//    @AfterMapping
-//    default void linkDetails(@MappingTarget Recipe recipe) {
-//        if (recipe.getDetails() != null) {
-//            recipe.getDetails().forEach(detail -> detail.setRecipe(recipe));
-//        }
-//    }
+    @AfterMapping
+    default void linkDetails(@MappingTarget Recipe recipe) {
+        if (recipe.getRecipeDetail() != null) {
+            recipe.getRecipeDetail().forEach(detail -> detail.setRecipe(recipe));
+        }
+    }
 }
