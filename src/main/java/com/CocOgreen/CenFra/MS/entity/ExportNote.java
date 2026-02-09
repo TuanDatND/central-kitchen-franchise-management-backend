@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.entity;
 
+import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
