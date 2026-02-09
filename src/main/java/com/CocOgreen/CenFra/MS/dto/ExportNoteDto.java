@@ -1,8 +1,11 @@
 package com.CocOgreen.CenFra.MS.dto;
 
+import lombok.Data;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
+@Data
 public class ExportNoteDto {
     private Integer exportId;
     private String exportCode;

@@ -1,7 +1,10 @@
 package com.CocOgreen.CenFra.MS.dto;
 
+import lombok.Data;
+
 import java.time.LocalDate;
 
+@Data
 public class ExportItemDto {
     private Integer productId;
     private String productName;
