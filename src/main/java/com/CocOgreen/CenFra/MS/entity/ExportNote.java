@@ -26,9 +26,9 @@ public class ExportNote {
     private String exportCode;
 
     // Quan hệ với đơn hàng của Dev 1
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "store_order_id")
-//    private StoreOrder storeOrder;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_order_id")
+    private StoreOrder storeOrder;
 
     @Column(name = "export_date")
     private OffsetDateTime exportDate = OffsetDateTime.now();
