@@ -29,9 +29,9 @@ public class InventoryReceipt {
     private ReceiptStatus status;
 
     // FK: created_by
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "created_by")
-//    private User createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
     // Quan hệ 1-N: Một phiếu nhập có nhiều dòng chi tiết
     @OneToMany(mappedBy = "inventoryReceipt", cascade = CascadeType.ALL)
