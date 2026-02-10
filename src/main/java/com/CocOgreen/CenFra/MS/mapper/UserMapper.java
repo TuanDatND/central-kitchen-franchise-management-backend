@@ -11,3 +11,4 @@ public interface UserMapper {
     @Mapping(target = "role", source = "role.role_name")
     UserDTO toDTO(User user);
 }
+

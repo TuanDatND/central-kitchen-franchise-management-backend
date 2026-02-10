@@ -1,3 +1,4 @@
+
 package com.CocOgreen.CenFra.MS.entity;
 
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
@@ -6,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.catalina.User;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -26,9 +26,9 @@ public class ExportNote {
     private String exportCode;
 
     // Quan hệ với đơn hàng của Dev 1
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "store_order_id")
-//    private StoreOrder storeOrder;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_order_id")
+    private StoreOrder storeOrder;
 
     @Column(name = "export_date")
     private OffsetDateTime exportDate = OffsetDateTime.now();
