@@ -1,33 +1,39 @@
 package com.CocOgreen.CenFra.MS.security;
 
 import com.CocOgreen.CenFra.MS.entity.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtProvider {
 
-    private static final String SECRET = "6F2vpZX1h09hCTOXafWvrAeKdyH1d3XDMDzBR9KGWpL4xJ8AuhTMbFxPLiyvhJTa";
-    private static final long EXP = 86400000;
+    @Value("${jwt.secret}")
+    private String secret;
+
+    private static final long EXP = 86400000; // 1 day
+
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUserName())
-                .claim("userId", user.getUserId())
-                .claim("role", user.getRole().getRoleName())
+                .claim("role", user.getRole().getRoleName().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXP))
-                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .signWith(getSigningKey())
                 .compact();
     }
 
     public Claims parseToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET.getBytes())
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

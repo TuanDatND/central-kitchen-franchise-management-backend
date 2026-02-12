@@ -20,12 +20,11 @@ public class CustomUserDetails implements UserDetails {
         return user;
     }
 
-    // 🔥 PHẢI ĐÚNG Y CHANG SIGNATURE NÀY
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(
                 new SimpleGrantedAuthority(
-                        "ROLE_" + user.getRole().getRoleName()
+                        "ROLE_" + user.getRole().getRoleName().name()
                 )
         );
     }
@@ -35,7 +34,6 @@ public class CustomUserDetails implements UserDetails {
         return user.getPassword();
     }
 
-    // ⚠️ CHÚ Ý: userName → getUserName()
     @Override
     public String getUsername() {
         return user.getUserName();
