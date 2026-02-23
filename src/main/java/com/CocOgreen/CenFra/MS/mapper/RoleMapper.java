@@ -9,11 +9,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RoleMapper {
     @Mapping(source = "role.roleName", target = "roleName")
-=======
-
-@Mapper(componentModel = "spring")
-public interface RoleMapper {
->>>>>>> main
 
     RoleDTO toDTO(Role role);
 }
