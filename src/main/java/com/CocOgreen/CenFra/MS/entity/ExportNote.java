@@ -1,7 +1,4 @@
-<<<<<<< feature/Login-Authorize
 
-=======
->>>>>>> main
 package com.CocOgreen.CenFra.MS.entity;
 
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
