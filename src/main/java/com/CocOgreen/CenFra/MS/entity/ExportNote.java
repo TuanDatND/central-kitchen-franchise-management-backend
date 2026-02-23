@@ -10,11 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-<<<<<<< feature/Login-Authorize
-=======
-import org.apache.catalina.User;
->>>>>>> main
-
 import java.time.OffsetDateTime;
 import java.util.List;
 
