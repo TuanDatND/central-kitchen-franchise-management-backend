@@ -13,9 +13,5 @@ public interface StoreOrderMapper {
 
     @Mapping(target = "storeId", source = "store.storeId")
     @Mapping(target = "storeName", source = "store.storeName")
-<<<<<<< feature/Login-Authorize
-=======
-    @Mapping(target = "details", source = "orderDetails")
->>>>>>> main
     StoreOrderDTO toDTO(StoreOrder storeOrder);
 }
