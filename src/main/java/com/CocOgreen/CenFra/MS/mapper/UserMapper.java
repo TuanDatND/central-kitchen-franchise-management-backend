@@ -11,7 +11,4 @@ public interface UserMapper {
     @Mapping(target = "role", source = "role.roleName")
     UserDTO toDTO(User user);
 }
-<<<<<<< feature/Login-Authorize
 
-=======
->>>>>>> main
