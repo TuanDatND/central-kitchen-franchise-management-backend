@@ -1,9 +1,6 @@
 package com.CocOgreen.CenFra.MS.entity;
 
-<<<<<<< feature/Login-Authorize
 import com.CocOgreen.CenFra.MS.enums.RoleName;
-=======
->>>>>>> main
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
