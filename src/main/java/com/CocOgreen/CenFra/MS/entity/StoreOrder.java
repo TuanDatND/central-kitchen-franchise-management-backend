@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Date;
+<<<<<<< feature/Login-Authorize
 import java.util.List;
+=======
+>>>>>>> main
 
 @Entity
 @Table(name = "store_orders")
@@ -25,9 +28,12 @@ public class StoreOrder {
     @ManyToOne
     private Store store;
 
+<<<<<<< feature/Login-Authorize
     @OneToMany(mappedBy = "storeOrder", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails;
 
+=======
+>>>>>>> main
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 

@@ -6,10 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+<<<<<<< feature/Login-Authorize
 import java.util.List;
 
 @Entity
 @Table(name ="users")
+=======
+@Entity
+@Table(name ="user")
+>>>>>>> main
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -36,8 +41,12 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+<<<<<<< feature/Login-Authorize
     @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<ExportNote> exportNotes;
+=======
+
+>>>>>>> main
     @Column
     private Boolean isActive;
 

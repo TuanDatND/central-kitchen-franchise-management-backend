@@ -10,5 +10,9 @@ import lombok.NoArgsConstructor;
 public class OrderDetailDTO {
     private Integer detailId;
     private Integer productId;
+<<<<<<< feature/Login-Authorize
+=======
+    private String productName;
+>>>>>>> main
     private Integer quantity;
 }

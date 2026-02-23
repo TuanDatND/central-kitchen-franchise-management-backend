@@ -7,5 +7,9 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Integer> {
 
+<<<<<<< feature/Login-Authorize
     Optional<User> findByUserName(String userName);
+=======
+    Optional<User> findByUsername(String username);
+>>>>>>> main
 }
