@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "store_orders")
@@ -23,6 +24,9 @@ public class StoreOrder {
 
     @ManyToOne
     private Store store;
+
+    @OneToMany(mappedBy = "storeOrder", cascade = CascadeType.ALL)
+    private List<OrderDetail> orderDetails;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
