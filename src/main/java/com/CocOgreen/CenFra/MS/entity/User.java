@@ -41,12 +41,8 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-<<<<<<< feature/Login-Authorize
     @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<ExportNote> exportNotes;
-=======
-
->>>>>>> main
     @Column
     private Boolean isActive;
 
