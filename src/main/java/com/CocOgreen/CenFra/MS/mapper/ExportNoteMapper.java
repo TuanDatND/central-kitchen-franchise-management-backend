@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ExportNoteMapper {
+
     @Mapping(target = "storeOrderId", source = "storeOrder.orderId")
     @Mapping(target = "storeName", source = "storeOrder.store.storeName")
     @Mapping(target = "items", source = "items")

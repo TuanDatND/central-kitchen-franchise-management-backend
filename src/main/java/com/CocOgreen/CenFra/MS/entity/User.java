@@ -6,8 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
-@Table(name ="user")
+@Table(name ="users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -34,7 +36,8 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-
+    @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
+    private List<ExportNote> exportNotes;
     @Column
     private Boolean isActive;
 
