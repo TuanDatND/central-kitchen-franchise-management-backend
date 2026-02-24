@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.entity;
 
+import com.CocOgreen.CenFra.MS.enums.RoleName;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,9 +19,9 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private Integer role_id;
+    private Integer roleId;
     @Column
-    private String role_name;
+    private RoleName roleName;
 
     @OneToMany(mappedBy = "role")
     private List<User> users;

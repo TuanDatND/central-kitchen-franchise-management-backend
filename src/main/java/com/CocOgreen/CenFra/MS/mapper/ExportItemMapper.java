@@ -13,4 +13,5 @@ public interface ExportItemMapper {
     @Mapping(target = "batchCode", source = "productBatch.batchCode")
     @Mapping(target = "expiryDate", source = "productBatch.expiryDate")
     ExportItemDto toDto(ExportItem entity);
+
 }

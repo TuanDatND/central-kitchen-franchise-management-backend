@@ -1,15 +1,17 @@
 package com.CocOgreen.CenFra.MS.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class UserDTO {
-    private String userId;
-    private String userName;
-    private String fullName;
+@Getter
+@Setter
+public class LoginResponse {
+
+    private String token;
     private String role;
+    private String username;
 }
