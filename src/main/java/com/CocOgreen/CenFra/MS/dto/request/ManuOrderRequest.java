@@ -1,11 +1,19 @@
 package com.CocOgreen.CenFra.MS.dto.request;
 
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 public class ManuOrderRequest {
+    @NotNull(message = "Phải chọn sản phẩm để nấu")
     private Integer productId;
-    private Integer quantity;
-    private LocalDateTime startDate; // Frontend gửi: "2024-02-10T08:00:00"
+
+    @Min(value = 1, message = "Số lượng nấu phải lớn hơn 0")
+    private Integer quantity; // Số lượng dự kiến nấu
+
+    @FutureOrPresent(message = "Ngày bắt đầu không được ở quá khứ")
+    private Instant startDate;
 }
