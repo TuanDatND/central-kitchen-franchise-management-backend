@@ -31,7 +31,15 @@ public class ManufacturingOrder {
     private ManuOrderStatus status;
 
     // FK: created_by (User)
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "created_by")
-//    private User createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id") // DB phải có cột này
+    private Product product;
+
+    // Nấu bao nhiêu? (Kế hoạch)
+    @Column(name = "quantity_planned")
+    private Integer quantityPlanned;
 }
