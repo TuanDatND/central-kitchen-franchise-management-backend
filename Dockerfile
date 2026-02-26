@@ -25,4 +25,4 @@ EXPOSE 8080
 # Chạy ứng dụng
 # Giới hạn RAM cho Java: Khởi động với 150MB, tối đa chỉ được dùng 300MB
 # Tránh việc vượt quá 512MB của Render gói Free
-ENTRYPOINT ["java", "-Xmx300m", "-Xms150m", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Xmx300m -Xms150m -jar app.jar --server.port=$PORT"]
