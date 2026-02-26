@@ -1,13 +1,28 @@
-# Giai đoạn 1: Build file JAR bằng Maven (Dùng JDK 21 ổn định để build)
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+# Giai đoạn 1: Build ứng dụng
+# Sử dụng JDK 25 của Eclipse Temurin (Ubuntu-based) để có trình biên dịch mới nhất
+FROM eclipse-temurin:25-jdk AS build
+
+# Cài đặt Maven thủ công vì Image Maven chính thức có thể chưa cập nhật JDK 25
+RUN apt-get update && apt-get install -y maven
+
 WORKDIR /app
 COPY . .
+
+# Biên dịch dự án
 RUN mvn clean package -DskipTests
 
-# Giai đoạn 2: Chạy ứng dụng (Dùng JDK 25 bản chính thức của Temurin)
-# Lưu ý: Nếu 25 vẫn báo lỗi 'not found', hãy tạm dùng 23 hoặc 21 để nộp bài vì chúng rất ổn định.
-FROM eclipse-temurin:21-jre-alpine
+# Giai đoạn 2: Chạy ứng dụng
+# Sử dụng JRE 25 để tối ưu dung lượng (nhẹ và nhanh hơn bản JDK full)
+FROM eclipse-temurin:25-jdk
 WORKDIR /app
+
+# Copy file jar đã build từ giai đoạn 1
 COPY --from=build /app/target/*.jar app.jar
+
+# Mở cổng 8080
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Chạy ứng dụng
+# Giới hạn RAM cho Java: Khởi động với 150MB, tối đa chỉ được dùng 300MB
+# Tránh việc vượt quá 512MB của Render gói Free
+ENTRYPOINT ["sh", "-c", "java -Xmx300m -Xms150m -jar app.jar --server.port=$PORT"]
