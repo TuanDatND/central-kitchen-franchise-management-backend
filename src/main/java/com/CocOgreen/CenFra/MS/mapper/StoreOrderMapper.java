@@ -18,7 +18,6 @@ public interface StoreOrderMapper {
 
     @Mapping(target = "storeId", source = "store.storeId")
     @Mapping(target = "storeName", source = "store.storeName")
-    @Mapping(target = "details", source = "orderDetails")
     StoreOrderDTO toDTO(StoreOrder storeOrder);
 
     @Mapping(target = "storeId", source = "store.storeId")
