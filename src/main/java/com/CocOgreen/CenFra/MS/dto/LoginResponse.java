@@ -1,17 +1,17 @@
 package com.CocOgreen.CenFra.MS.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+@Data
+@Builder
 @NoArgsConstructor
-@Getter
-@Setter
+@AllArgsConstructor
 public class LoginResponse {
-
-    private String token;
-    private String role;
+    private String accessToken;
+    private String refreshToken;
     private String username;
+    private String role;
 }

@@ -1,21 +1,32 @@
 package com.CocOgreen.CenFra.MS.security;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtFilter.class);
+
     private final JwtProvider jwtProvider;
-    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -24,40 +35,60 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getServletPath();
-
-        if (path.equals("/api/auth/login")) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String header = request.getHeader("Authorization");
+        String token = normalizeBearerToken(header.substring(7).trim());
+        if (token.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        if (header != null && header.startsWith("Bearer ")) {
-
-            String token = header.substring(7);
-
-            try {
-                String username =
-                        jwtProvider.parseToken(token).getSubject();
-
-                var userDetails =
-                        userDetailsService.loadUserByUsername(username);
-
-                var auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
-
-                SecurityContextHolder.getContext()
-                        .setAuthentication(auth);
-
-            } catch (Exception e) {
-                SecurityContextHolder.clearContext();
+        try {
+            Claims claims = jwtProvider.parseToken(token);
+            if ("refresh".equals(claims.get("type"))) {
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                String username = claims.getSubject();
+                String role = claims.get("role", String.class);
+                if (username == null || username.isBlank() || role == null || role.isBlank()) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                );
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+        } catch (ExpiredJwtException ex) {
+            log.debug("JWT expired for {} {}", request.getMethod(), request.getRequestURI());
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.debug("JWT invalid for {} {}", request.getMethod(), request.getRequestURI());
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String normalizeBearerToken(String token) {
+        String normalized = token;
+        while (normalized.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            normalized = normalized.substring(7).trim();
+        }
+        if (normalized.length() >= 2
+                && normalized.startsWith("\"")
+                && normalized.endsWith("\"")) {
+            normalized = normalized.substring(1, normalized.length() - 1).trim();
+        }
+        return normalized;
     }
 }
