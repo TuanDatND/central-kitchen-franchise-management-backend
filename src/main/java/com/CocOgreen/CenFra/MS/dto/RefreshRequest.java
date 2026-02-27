@@ -6,13 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
-public class LoginRequest {
+@NoArgsConstructor
+@AllArgsConstructor
+public class RefreshRequest {
     @NotBlank
-    private String username;
-    @NotBlank
-    private String password;
+    private String refreshToken;
 }
