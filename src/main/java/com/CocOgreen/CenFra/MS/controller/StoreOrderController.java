@@ -24,14 +24,14 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class StoreOrderController {
     private final StoreOrderService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STORE_MANAGER','COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER','ADMIN')")
     public ResponseEntity<StoreOrderDTO> create(@Valid @RequestBody CreateStoreOrderRequest request) {
         return ResponseEntity.ok(service.createOrder(request));
     }

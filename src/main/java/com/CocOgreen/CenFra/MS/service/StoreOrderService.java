@@ -194,9 +194,9 @@ public class StoreOrderService {
         if (hasAnyRole(auth, RoleName.STORE_MANAGER)) {
             return resolveStoreByManager(auth.getName());
         }
-        if (hasAnyRole(auth, RoleName.COORDINATOR, RoleName.ADMIN)) {
+        if (hasAnyRole(auth, RoleName.ADMIN)) {
             if (storeIdFromRequest == null) {
-                throw new IllegalArgumentException("storeId is required for coordinator/admin");
+                throw new IllegalArgumentException("storeId is required for admin");
             }
             return storeRepository.findById(storeIdFromRequest).orElseThrow(() -> new RuntimeException("Store not found"));
         }
