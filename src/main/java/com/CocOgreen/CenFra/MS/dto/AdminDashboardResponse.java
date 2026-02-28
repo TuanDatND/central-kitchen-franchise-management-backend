@@ -3,11 +3,14 @@ package com.CocOgreen.CenFra.MS.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 public class AdminDashboardResponse {
+    private Instant generatedAt;
+
     private long totalUsers;
     private long activeUsers;
     private long inactiveUsers;
@@ -20,6 +23,11 @@ public class AdminDashboardResponse {
     private long pendingOrders;
     private long approvedOrders;
     private long cancelledOrders;
+
+    private long ordersToday;
+    private long pendingOrdersToday;
+    private long approvedOrdersToday;
+    private long cancelledOrdersToday;
 
     private List<TopStoreSummary> topStores;
 

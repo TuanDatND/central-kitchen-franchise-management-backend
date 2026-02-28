@@ -11,6 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -37,6 +41,13 @@ public class AdminDashboardService {
         long approvedOrders = storeOrderRepository.countByStatus(StoreOrderStatus.APPROVED);
         long cancelledOrders = storeOrderRepository.countByStatus(StoreOrderStatus.CANCELLED);
 
+        Date todayStart = startOfToday();
+        Date tomorrowStart = startOfTomorrow();
+        long ordersToday = storeOrderRepository.countByOrderDateBetween(todayStart, tomorrowStart);
+        long pendingOrdersToday = storeOrderRepository.countByStatusAndOrderDateBetween(StoreOrderStatus.PENDING, todayStart, tomorrowStart);
+        long approvedOrdersToday = storeOrderRepository.countByStatusAndOrderDateBetween(StoreOrderStatus.APPROVED, todayStart, tomorrowStart);
+        long cancelledOrdersToday = storeOrderRepository.countByStatusAndOrderDateBetween(StoreOrderStatus.CANCELLED, todayStart, tomorrowStart);
+
         List<AdminDashboardResponse.TopStoreSummary> topStores = storeOrderRepository
                 .findTopStoresByOrderCount(PageRequest.of(0, safeLimit))
                 .stream()
@@ -44,6 +55,7 @@ public class AdminDashboardService {
                 .toList();
 
         return new AdminDashboardResponse(
+                Instant.now(),
                 totalUsers,
                 activeUsers,
                 inactiveUsers,
@@ -54,6 +66,10 @@ public class AdminDashboardService {
                 pendingOrders,
                 approvedOrders,
                 cancelledOrders,
+                ordersToday,
+                pendingOrdersToday,
+                approvedOrdersToday,
+                cancelledOrdersToday,
                 topStores
         );
     }
@@ -64,5 +80,13 @@ public class AdminDashboardService {
                 projection.getStoreName(),
                 projection.getTotalOrders()
         );
+    }
+
+    private Date startOfToday() {
+        return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private Date startOfTomorrow() {
+        return Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 }
