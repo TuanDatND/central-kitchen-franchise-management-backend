@@ -38,6 +38,11 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) {
             filterChain.doFilter(request, response);
@@ -57,28 +62,26 @@ public class JwtFilter extends OncePerRequestFilter {
                 return;
             }
 
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = claims.getSubject();
-                if (username == null || username.isBlank()) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-
-                User user = userRepository.findByUserName(username).orElse(null);
-                if (user == null || !Boolean.TRUE.equals(user.getIsActive()) || user.getRole() == null) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-
-                String role = user.getRole().getRoleName().name();
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+            String username = claims.getSubject();
+            if (username == null || username.isBlank()) {
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            User user = userRepository.findByUserName(username).orElse(null);
+            if (user == null || !Boolean.TRUE.equals(user.getIsActive()) || user.getRole() == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String role = user.getRole().getRoleName().name();
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    username,
+                    null,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+            );
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
         } catch (ExpiredJwtException ex) {
             log.debug("JWT expired for {} {}", request.getMethod(), request.getRequestURI());
         } catch (JwtException | IllegalArgumentException ex) {
