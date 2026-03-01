@@ -10,14 +10,14 @@ import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import com.CocOgreen.CenFra.MS.security.CustomUserDetails;
 import com.CocOgreen.CenFra.MS.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -25,10 +25,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final String REFRESH_EXPIRES_LABEL = "7d";
 
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
@@ -55,12 +58,7 @@ public class AuthService {
         String refreshToken = jwtProvider.generateRefreshToken(user);
         persistRefreshToken(user, refreshToken);
 
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .username(user.getUserName())
-                .role(user.getRole().getRoleName().name())
-                .build();
+        return buildAuthResponse(user, accessToken, refreshToken, "Đăng nhập thành công");
     }
 
     @Transactional
@@ -98,12 +96,7 @@ public class AuthService {
         persistRefreshToken(user, newRefreshToken);
         refreshTokenRepository.deleteByExpiresAtBefore(Instant.now());
 
-        return LoginResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .username(user.getUserName())
-                .role(user.getRole().getRoleName().name())
-                .build();
+        return buildAuthResponse(user, newAccessToken, newRefreshToken, "Làm mới token thành công");
     }
 
     @Transactional
@@ -118,6 +111,22 @@ public class AuthService {
         User user = userRepository.findByUserName(auth.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         refreshTokenRepository.revokeAllActiveByUserId(user.getUserId());
+    }
+
+    private LoginResponse buildAuthResponse(User user, String accessToken, String refreshToken, String message) {
+        LoginResponse.UserPayload userPayload = new LoginResponse.UserPayload(
+                user.getUserId(),
+                user.getUserName(),
+                user.getEmail(),
+                List.of(user.getRole().getRoleName().name())
+        );
+        LoginResponse.LoginData data = new LoginResponse.LoginData(
+                "Bearer " + accessToken,
+                refreshToken,
+                REFRESH_EXPIRES_LABEL,
+                userPayload
+        );
+        return new LoginResponse(message, data);
     }
 
     private void persistRefreshToken(User user, String rawRefreshToken) {
