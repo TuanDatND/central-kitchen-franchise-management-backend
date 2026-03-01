@@ -2,6 +2,8 @@ package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.AdminStoreResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreRequest;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreActiveRequest;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreInfoRequest;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreManagerRequest;
 import com.CocOgreen.CenFra.MS.service.AdminStoreService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/stores")
@@ -40,9 +40,21 @@ public class AdminStoreController {
         return ResponseEntity.ok(adminStoreService.listStores(active, normalizedPage, normalizedSize));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<AdminStoreResponse> getStore(@PathVariable Integer id) {
+        return ResponseEntity.ok(adminStoreService.getStore(id));
+    }
+
     @PostMapping
     public ResponseEntity<AdminStoreResponse> createStore(@Valid @RequestBody CreateStoreRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminStoreService.createStore(request));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<AdminStoreResponse> updateStoreInfo(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateStoreInfoRequest request) {
+        return ResponseEntity.ok(adminStoreService.updateStoreInfo(id, request));
     }
 
     @PatchMapping("/{id}/manager")
@@ -55,11 +67,7 @@ public class AdminStoreController {
     @PatchMapping("/{id}/active")
     public ResponseEntity<AdminStoreResponse> updateActive(
             @PathVariable Integer id,
-            @RequestBody Map<String, Boolean> request) {
-        Boolean isActive = request.get("isActive");
-        if (isActive == null) {
-            throw new IllegalArgumentException("isActive is required");
-        }
-        return ResponseEntity.ok(adminStoreService.updateActive(id, isActive));
+            @Valid @RequestBody UpdateStoreActiveRequest request) {
+        return ResponseEntity.ok(adminStoreService.updateActive(id, request.getIsActive()));
     }
 }

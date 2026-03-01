@@ -1,5 +1,7 @@
 package com.CocOgreen.CenFra.MS.security;
 
+import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -27,6 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtFilter.class);
 
     private final JwtProvider jwtProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -56,12 +59,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 String username = claims.getSubject();
-                String role = claims.get("role", String.class);
-                if (username == null || username.isBlank() || role == null || role.isBlank()) {
+                if (username == null || username.isBlank()) {
                     filterChain.doFilter(request, response);
                     return;
                 }
 
+                User user = userRepository.findByUserName(username).orElse(null);
+                if (user == null || !Boolean.TRUE.equals(user.getIsActive()) || user.getRole() == null) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                String role = user.getRole().getRoleName().name();
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         username,
                         null,
