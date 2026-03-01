@@ -2,6 +2,7 @@ package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.AdminStoreResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreRequest;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreInfoRequest;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreManagerRequest;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.entity.User;
@@ -31,22 +32,49 @@ public class AdminStoreService {
         return stores.map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
+    public AdminStoreResponse getStore(Integer storeId) {
+        return toResponse(findStore(storeId));
+    }
+
     @Transactional
     public AdminStoreResponse createStore(CreateStoreRequest request) {
-        if (storeRepository.existsByStoreName(request.getStoreName())) {
+        String normalizedStoreName = request.getStoreName().trim();
+        if (storeRepository.existsByStoreName(normalizedStoreName)) {
             throw new IllegalArgumentException("Store name already exists");
         }
 
         User manager = resolveStoreManager(request.getManagerUserId());
 
         Store store = new Store();
-        store.setStoreName(request.getStoreName().trim());
+        store.setStoreName(normalizedStoreName);
         store.setAddress(request.getAddress());
         store.setPhone(request.getPhone());
         store.setManager(manager);
         store.setIsActive(request.getIsActive() == null ? Boolean.TRUE : request.getIsActive());
 
         return toResponse(storeRepository.save(store));
+    }
+
+    @Transactional
+    public AdminStoreResponse updateStoreInfo(Integer storeId, UpdateStoreInfoRequest request) {
+        Store store = findStore(storeId);
+
+        if (request.getStoreName() != null && !request.getStoreName().isBlank()) {
+            String normalizedStoreName = request.getStoreName().trim();
+            if (storeRepository.existsByStoreNameAndStoreIdNot(normalizedStoreName, storeId)) {
+                throw new IllegalArgumentException("Store name already exists");
+            }
+            store.setStoreName(normalizedStoreName);
+        }
+        if (request.getAddress() != null) {
+            store.setAddress(request.getAddress());
+        }
+        if (request.getPhone() != null) {
+            store.setPhone(request.getPhone());
+        }
+
+        return toResponse(store);
     }
 
     @Transactional

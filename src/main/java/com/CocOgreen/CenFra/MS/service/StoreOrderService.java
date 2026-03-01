@@ -198,7 +198,8 @@ public class StoreOrderService {
             if (storeIdFromRequest == null) {
                 throw new IllegalArgumentException("storeId is required for admin");
             }
-            return storeRepository.findById(storeIdFromRequest).orElseThrow(() -> new RuntimeException("Store not found"));
+            return storeRepository.findById(storeIdFromRequest)
+                    .orElseThrow(() -> new RuntimeException("Store not found"));
         }
         throw new AccessDeniedException("You do not have permission to create order");
     }

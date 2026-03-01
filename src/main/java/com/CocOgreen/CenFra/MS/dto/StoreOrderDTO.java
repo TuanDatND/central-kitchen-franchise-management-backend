@@ -1,7 +1,10 @@
 package com.CocOgreen.CenFra.MS.dto;
 
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StoreOrderDTO {
 
     private Integer orderId;
@@ -21,7 +25,8 @@ public class StoreOrderDTO {
     private LocalDateTime orderDate;
     private LocalDate deliveryDate;
 
-    private StoreOrderStatus status; // PENDING, APPROVED, ...
+    private StoreOrderStatus status;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<OrderDetailDTO> details;
 }

@@ -15,6 +15,8 @@ public interface StoreRepository extends JpaRepository<Store, Integer> {
 
     boolean existsByStoreName(String storeName);
 
+    boolean existsByStoreNameAndStoreIdNot(String storeName, Integer storeId);
+
     Page<Store> findByIsActive(Boolean isActive, Pageable pageable);
 
     long countByIsActive(Boolean isActive);
