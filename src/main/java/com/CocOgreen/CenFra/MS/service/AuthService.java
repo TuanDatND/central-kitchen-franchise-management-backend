@@ -106,11 +106,11 @@ public class AuthService {
                 || !auth.isAuthenticated()
                 || auth instanceof AnonymousAuthenticationToken
                 || "anonymousUser".equals(auth.getName())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+            return;
         }
-        User user = userRepository.findByUserName(auth.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        refreshTokenRepository.revokeAllActiveByUserId(user.getUserId());
+
+        userRepository.findByUserName(auth.getName())
+                .ifPresent(user -> refreshTokenRepository.revokeAllActiveByUserId(user.getUserId()));
     }
 
     private LoginResponse buildAuthResponse(User user, String accessToken, String refreshToken, String message) {
