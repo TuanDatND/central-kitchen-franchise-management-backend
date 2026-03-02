@@ -8,5 +8,5 @@ import lombok.*;
 public class RoleDTO {
 
     private Integer roleId;
-    private String roleName; // ADMIN, STORE_MANAGER, ...
+    private String roleName; // ADMIN, MANAGER, SUPPLY_COORDINATOR, CENTRAL_KITCHEN_STAFF, FRANCHISE_STORE_STAFF
 }

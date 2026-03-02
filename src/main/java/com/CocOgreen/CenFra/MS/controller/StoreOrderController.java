@@ -31,13 +31,13 @@ public class StoreOrderController {
     private final StoreOrderService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STORE_MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','ADMIN')")
     public ResponseEntity<StoreOrderDTO> create(@Valid @RequestBody CreateStoreOrderRequest request) {
         return ResponseEntity.ok(service.createOrder(request));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('STORE_MANAGER','COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','SUPPLY_COORDINATOR','MANAGER','CENTRAL_KITCHEN_STAFF','ADMIN')")
     public ResponseEntity<Page<StoreOrderDTO>> list(
             @RequestParam(required = false) StoreOrderStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -48,25 +48,25 @@ public class StoreOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('STORE_MANAGER','COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','SUPPLY_COORDINATOR','MANAGER','CENTRAL_KITCHEN_STAFF','ADMIN')")
     public ResponseEntity<StoreOrderDTO> detail(@PathVariable Integer id) {
         return ResponseEntity.ok(service.getOrderDetail(id));
     }
 
     @GetMapping("/dashboard/top-stores")
-    @PreAuthorize("hasAnyRole('COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> topStores(@RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(service.getTopStoresByOrderCount(limit));
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
     public ResponseEntity<OrderActionResponseDTO> approve(@PathVariable Integer id) {
         return ResponseEntity.ok(service.approveOrder(id));
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('STORE_MANAGER','COORDINATOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
     public ResponseEntity<OrderActionResponseDTO> cancel(
             @PathVariable Integer id,
             @Valid @RequestBody CancelOrderRequest request) {

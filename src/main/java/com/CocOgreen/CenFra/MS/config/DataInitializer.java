@@ -41,9 +41,10 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         createUser("admin", RoleName.ADMIN);
-        createUser("store", RoleName.STORE_MANAGER);
-        createUser("coordinator", RoleName.COORDINATOR);
-        createUser("chef", RoleName.CHEF);
+        createUser("manager", RoleName.MANAGER);
+        createUser("coordinator", RoleName.SUPPLY_COORDINATOR);
+        createUser("kitchen", RoleName.CENTRAL_KITCHEN_STAFF);
+        createUser("store", RoleName.FRANCHISE_STORE_STAFF);
         createHardcodedStore();
         createHardcodedProducts();
 
