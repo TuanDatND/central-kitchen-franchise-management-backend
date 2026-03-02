@@ -8,10 +8,14 @@ import com.CocOgreen.CenFra.MS.enums.ManuOrderStatus;
 import com.CocOgreen.CenFra.MS.mapper.ManufacturingOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ManufacturingOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductRepository;
+import com.CocOgreen.CenFra.MS.repository.UserRepository;
+import com.CocOgreen.CenFra.MS.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +29,7 @@ public class ManufacturingOrderService {
 
     private final ManufacturingOrderRepository manufacturingOrderRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
     private final ManufacturingOrderMapper manufacturingOrderMapper;
 
     /**
@@ -55,6 +60,13 @@ public class ManufacturingOrderService {
         // Mặc định gán trạng thái PLANNED (dù mapper đã bỏ constant nhưng để an toàn,
         // gán thêm tại đây)
         order.setStatus(ManuOrderStatus.PLANNED);
+
+        // Lấy tên đăng nhập hiện tại từ SecurityContext và tìm User
+        String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUserName(currentUserName)
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy người dùng hiện tại trong hệ thống: " + currentUserName));
+        order.setCreatedBy(currentUser);
 
         // Lưu xuống DB
         ManufacturingOrder savedOrder = manufacturingOrderRepository.save(order);
@@ -91,6 +103,11 @@ public class ManufacturingOrderService {
 
         // Cập nhật trạng thái mới
         order.setStatus(newStatus);
+
+        // Nếu chuyển sang trạng thái COMPLETED thì gán thời gian kết thúc
+        if (newStatus == ManuOrderStatus.COMPLETED) {
+            order.setEndDate(Instant.now());
+        }
 
         // Lưu đối tượng sau khi update
         ManufacturingOrder updatedOrder = manufacturingOrderRepository.save(order);
