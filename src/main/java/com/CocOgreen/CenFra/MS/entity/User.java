@@ -21,10 +21,10 @@ public class User {
     @Column
     private Integer userId;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String userName;
 
-    @Column
+    @Column(nullable = false)
     private String password;
 
     @Column
@@ -38,7 +38,7 @@ public class User {
     private Role role;
     @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<ExportNote> exportNotes;
-    @Column
+    @Column(nullable = false)
     private Boolean isActive;
 
 }

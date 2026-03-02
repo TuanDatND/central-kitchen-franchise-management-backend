@@ -28,4 +28,7 @@ public class Store {
     @ManyToOne
     @JoinColumn(name = "manager_id")
     private User manager;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
 }

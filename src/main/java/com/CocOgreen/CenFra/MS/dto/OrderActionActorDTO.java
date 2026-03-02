@@ -5,12 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OrderDetailDTO {
-    private Integer detailId;
-    private Integer productId;
-    private Integer quantity;
+public class OrderActionActorDTO {
+    private Integer userId;
+    private String username;
+    private String fullName;
 }

@@ -8,25 +8,21 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class StoreOrderDTO {
-
+public class OrderActionResponseDTO {
     private Integer orderId;
     private String orderCode;
-
     private Integer storeId;
     private String storeName;
-
-    private LocalDateTime orderDate;
     private LocalDate deliveryDate;
-
-    private StoreOrderStatus status;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<OrderDetailDTO> details;
+    private StoreOrderStatus previousStatus;
+    private StoreOrderStatus currentStatus;
+    private OrderActionActorDTO actor;
+    private LocalDateTime actionAt;
+    private String cancelReason;
+    private String message;
 }
