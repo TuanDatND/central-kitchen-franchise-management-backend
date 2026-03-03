@@ -103,8 +103,8 @@ public class AdminStoreService {
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new IllegalArgumentException("Manager user is inactive");
         }
-        if (user.getRole() == null || user.getRole().getRoleName() != RoleName.STORE_MANAGER) {
-            throw new IllegalArgumentException("User must have STORE_MANAGER role");
+        if (user.getRole() == null || user.getRole().getRoleName() != RoleName.FRANCHISE_STORE_STAFF) {
+            throw new IllegalArgumentException("User must have FRANCHISE_STORE_STAFF role");
         }
         return user;
     }

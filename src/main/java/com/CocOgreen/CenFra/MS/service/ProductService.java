@@ -67,10 +67,7 @@ public class ProductService {
     public void deleteProduct(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-        // Soft delete assuming we keep products for historical reasons, or hard delete
-        // if preferred.
-        // I will do hard delete based on typical CRUD, but could do
-        // product.setStatus(ProductStatus.INACTIVE).
-        productRepository.deleteById(id);
+
+        product.setStatus(ProductStatus.INACTIVE); // đánh dấu ngưng hoạt động
     }
 }

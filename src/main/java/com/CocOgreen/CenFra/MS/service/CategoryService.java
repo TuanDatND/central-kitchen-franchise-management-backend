@@ -51,7 +51,6 @@ public class CategoryService {
         if (CategoryStatus.INACTIVE.equals(category.getStatus())) {
             throw new RuntimeException("Category not found with id: " + id);
         }
-
         category.setCategoryName(request.getCategoryName());
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);

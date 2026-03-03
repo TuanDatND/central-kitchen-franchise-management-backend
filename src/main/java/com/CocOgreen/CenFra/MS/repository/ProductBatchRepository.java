@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.repository;
 
+import com.CocOgreen.CenFra.MS.entity.Product;
 import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,7 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Inte
 
     // Tìm tất cả các lô hàng được tạo ra từ một Lệnh sản xuất cụ thể
     List<ProductBatch> findByManufacturingOrder_ManuOrderId(Integer manuOrderId);
+
+    //TuanDatCutee hehehe
+    List<ProductBatch> findByProductAndCurrentQuantityGreaterThanOrderByExpiryDateAsc(Product product, Integer quantity);
 }
