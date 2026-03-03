@@ -7,12 +7,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 // uses = ReceiptItemMapper.class: Bảo MapStruct dùng mapper này để convert cái List<ReceiptItem>
-@Mapper(componentModel = "spring", uses = {ReceiptItemMapper.class})
+@Mapper(componentModel = "spring", uses = { ReceiptItemMapper.class })
 public interface InventoryReceiptMapper {
 
     // 1. Entity -> Response
     @Mapping(source = "createdBy.fullName", target = "createdBy")
-    // MapStruct tự động map List<ReceiptItem> -> List<ReceiptItemResponse> nhờ 'uses'
+    @Mapping(source = "receiptItems", target = "items")
+    // MapStruct tự động map List<ReceiptItem> -> List<ReceiptItemResponse> nhờ
+    // 'uses'
     InventoryReceiptResponse toResponse(InventoryReceipt receipt);
 
     // 2. Request -> Entity (Chỉ map vỏ phiếu nhập)

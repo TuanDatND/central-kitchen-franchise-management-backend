@@ -16,7 +16,8 @@ public interface ProductMapper {
     ProductResponse toResponse(Product product);
 
     // 2. Request -> Entity
-    // categoryId sẽ được xử lý trong Service (tìm trong DB rồi set vào), nên ở đây ignore
+    // categoryId sẽ được xử lý trong Service (tìm trong DB rồi set vào), nên ở đây
+    // ignore
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "status", ignore = true) // Mặc định set ACTIVE ở Service
     @Mapping(target = "category", ignore = true)
@@ -25,5 +26,6 @@ public interface ProductMapper {
     // 3. Update Entity từ Request
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "status", ignore = true)
     void updateProduct(@MappingTarget Product product, ProductRequest request);
 }

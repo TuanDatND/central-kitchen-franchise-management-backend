@@ -13,6 +13,7 @@ public interface ManufacturingOrderMapper {
     @Mapping(source = "createdBy.fullName", target = "createdBy") // Lấy tên người tạo
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "product.unit", target = "unit")
+    @Mapping(source = "quantityPlanned", target = "quantity")
     ManuOrderResponse toResponse(ManufacturingOrder order);
 
     // Request -> Entity
@@ -21,6 +22,8 @@ public interface ManufacturingOrderMapper {
     @Mapping(target = "endDate", ignore = true)
     @Mapping(target = "status", constant = "PLANNED") // Mặc định
     @Mapping(target = "createdBy", ignore = true) // Lấy từ Security Context
+    @Mapping(target = "product", ignore = true)
+    @Mapping(target = "quantityPlanned", ignore = true)
     // Product sẽ được Service tìm theo ID và set vào sau
     ManufacturingOrder toEntity(ManuOrderRequest request);
 }
