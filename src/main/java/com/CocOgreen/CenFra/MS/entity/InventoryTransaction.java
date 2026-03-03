@@ -10,7 +10,7 @@ import lombok.Setter;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "export_items")
+@Table(name = "inventory_transactions")
 @Getter
 @Setter
 @NoArgsConstructor
