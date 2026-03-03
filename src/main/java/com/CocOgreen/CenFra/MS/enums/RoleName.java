@@ -5,7 +5,8 @@ import jakarta.persistence.Enumerated;
 
 public enum RoleName {
     ADMIN,
-    STORE_MANAGER,
-    COORDINATOR,
-    CHEF
+    MANAGER,
+    SUPPLY_COORDINATOR,
+    CENTRAL_KITCHEN_STAFF,
+    FRANCHISE_STORE_STAFF
 }

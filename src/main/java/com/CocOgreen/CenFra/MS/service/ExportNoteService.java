@@ -29,7 +29,7 @@ public class ExportNoteService {
     private final ProductBatchRepository productBatchRepository;
     private final ExportNoteMapper exportNoteMapper;
     private final StoreOrderRepository storeOrderRepository;
-    private InventoryTransactionService auditService;
+    private final InventoryTransactionService auditService;
 
     public List<ExportNoteDto> findAll() {
         return exportNoteRepositoty.findAll().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
