@@ -20,7 +20,9 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Integer roleId;
+
     @Column
+    @Enumerated(EnumType.STRING)
     private RoleName roleName;
 
     @OneToMany(mappedBy = "role")
