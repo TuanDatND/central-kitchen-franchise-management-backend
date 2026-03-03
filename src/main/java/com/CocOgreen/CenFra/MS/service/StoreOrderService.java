@@ -88,12 +88,12 @@ public class StoreOrderService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
 
         Page<StoreOrder> orders;
-        if (hasAnyRole(auth, RoleName.STORE_MANAGER)) {
+        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             Store store = resolveStoreByManager(auth.getName());
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
-        } else if (hasAnyRole(auth, RoleName.COORDINATOR, RoleName.ADMIN)) {
+        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);
@@ -109,12 +109,12 @@ public class StoreOrderService {
         Authentication auth = getAuthentication();
         StoreOrder order = findOrder(orderId);
 
-        if (hasAnyRole(auth, RoleName.STORE_MANAGER)) {
+        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             String managerUsername = order.getStore().getManager().getUserName();
             if (!managerUsername.equals(auth.getName())) {
                 throw new AccessDeniedException("You can only view your store orders");
             }
-        } else if (!hasAnyRole(auth, RoleName.COORDINATOR, RoleName.ADMIN)) {
+        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
             throw new AccessDeniedException("You do not have permission to view this order");
         }
 
@@ -161,22 +161,17 @@ public class StoreOrderService {
     }
 
     private void validateApprover() {
-        if (!hasAnyRole(getAuthentication(), RoleName.COORDINATOR, RoleName.ADMIN)) {
-            throw new AccessDeniedException("Only coordinator or admin can approve order");
+        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
+            throw new AccessDeniedException("Only supply coordinator, manager or admin can approve order");
         }
     }
 
     private void validateOwnershipOrCoordinatorOrAdmin(StoreOrder order) {
         Authentication auth = getAuthentication();
-        if (hasAnyRole(auth, RoleName.COORDINATOR, RoleName.ADMIN)) {
+        if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
             return;
         }
-        if (!hasAnyRole(auth, RoleName.STORE_MANAGER)) {
-            throw new AccessDeniedException("You do not have permission to cancel this order");
-        }
-        if (!order.getStore().getManager().getUserName().equals(auth.getName())) {
-            throw new AccessDeniedException("You can only cancel your own store order");
-        }
+        throw new AccessDeniedException("You do not have permission to cancel this order");
     }
 
     private boolean hasAnyRole(Authentication auth, RoleName... roles) {
@@ -191,7 +186,7 @@ public class StoreOrderService {
     }
 
     private Store resolveStoreForCreate(Authentication auth, Integer storeIdFromRequest) {
-        if (hasAnyRole(auth, RoleName.STORE_MANAGER)) {
+        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             return resolveStoreByManager(auth.getName());
         }
         if (hasAnyRole(auth, RoleName.ADMIN)) {
