@@ -14,6 +14,7 @@ import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ExportNoteService {
     private final ExportNoteRepositoty exportNoteRepositoty;
     private final ProductBatchRepository productBatchRepository;
