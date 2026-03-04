@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.CancelOrderRequest;
+import com.CocOgreen.CenFra.MS.dto.ConsolidatedOrderResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.OrderActionActorDTO;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
@@ -24,18 +25,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -101,7 +106,7 @@ public class StoreOrderService {
             throw new AccessDeniedException("You do not have permission to view orders");
         }
 
-        return orders.map(storeOrderMapper::toSummaryDTO);
+        return orders.map(storeOrderMapper::toDTO);
     }
 
     @Transactional(readOnly = true)
@@ -150,6 +155,62 @@ public class StoreOrderService {
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.cancel();
         return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(), "Order cancelled successfully");
+    }
+
+    @Transactional(readOnly = true)
+    public ConsolidatedOrderResponse consolidateOrders(List<Integer> orderIds) {
+        Authentication auth = getAuthentication();
+        if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
+            throw new AccessDeniedException("Only supply coordinator can consolidate orders");
+        }
+        if (orderIds == null || orderIds.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 orderIds are required");
+        }
+
+        List<Integer> uniqueOrderIds = orderIds.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+        if (uniqueOrderIds.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
+        }
+
+        List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
+        if (orders.size() != uniqueOrderIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
+        }
+
+        boolean hasNonApproved = orders.stream().anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
+        if (hasNonApproved) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only APPROVED orders can be consolidated");
+        }
+
+        Map<Integer, Integer> totalQuantityByProduct = new LinkedHashMap<>();
+        for (StoreOrder order : orders) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Product product = detail.getProduct();
+                totalQuantityByProduct.merge(product.getProductId(), detail.getQuantity(), Integer::sum);
+            }
+        }
+
+        Instant suggestedStartDate = Instant.now();
+        List<ConsolidatedOrderResponse.ManufacturingRequestBody> manufacturingOrders = totalQuantityByProduct.entrySet()
+                .stream()
+                .map(entry -> new ConsolidatedOrderResponse.ManufacturingRequestBody(
+                        entry.getKey(),
+                        entry.getValue(),
+                        suggestedStartDate
+                ))
+                .toList();
+
+        ConsolidatedOrderResponse.BasicInfo basicInfo = new ConsolidatedOrderResponse.BasicInfo(
+                LocalDateTime.now(),
+                auth.getName(),
+                orders.size(),
+                uniqueOrderIds
+        );
+
+        return new ConsolidatedOrderResponse(basicInfo, manufacturingOrders);
     }
 
     private StoreOrder findOrder(Integer id) {
