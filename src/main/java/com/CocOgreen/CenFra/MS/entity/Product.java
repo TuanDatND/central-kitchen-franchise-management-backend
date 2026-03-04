@@ -3,7 +3,6 @@ package com.CocOgreen.CenFra.MS.entity;
 import com.CocOgreen.CenFra.MS.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
 
 @Entity
 @Table(name = "products")

@@ -3,6 +3,7 @@ package com.CocOgreen.CenFra.MS.service;
 import com.CocOgreen.CenFra.MS.dto.request.CategoryRequest;
 import com.CocOgreen.CenFra.MS.dto.response.CategoryResponse;
 import com.CocOgreen.CenFra.MS.entity.Category;
+import com.CocOgreen.CenFra.MS.enums.CategoryStatus;
 import com.CocOgreen.CenFra.MS.mapper.CategoryMapper;
 import com.CocOgreen.CenFra.MS.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class CategoryService {
     private final CategoryMapper categoryMapper;
 
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
+        return categoryRepository.findAllByStatus(CategoryStatus.ACTIVE).stream()
                 .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -28,12 +29,16 @@ public class CategoryService {
     public CategoryResponse getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        if (CategoryStatus.INACTIVE.equals(category.getStatus())) {
+            throw new RuntimeException("Category not found with id: " + id);
+        }
         return categoryMapper.toResponse(category);
     }
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         Category category = categoryMapper.toEntity(request);
+        category.setStatus(CategoryStatus.ACTIVE);
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);
     }
@@ -43,6 +48,9 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
+        if (CategoryStatus.INACTIVE.equals(category.getStatus())) {
+            throw new RuntimeException("Category not found with id: " + id);
+        }
         category.setCategoryName(request.getCategoryName());
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);
@@ -50,9 +58,14 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(Integer id) {
-        if (!categoryRepository.existsById(id)) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+
+        if (CategoryStatus.INACTIVE.equals(category.getStatus())) {
             throw new RuntimeException("Category not found with id: " + id);
         }
-        categoryRepository.deleteById(id);
+
+        category.setStatus(CategoryStatus.INACTIVE);
+        categoryRepository.save(category);
     }
 }

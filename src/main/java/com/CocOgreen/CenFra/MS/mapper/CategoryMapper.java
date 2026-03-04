@@ -15,5 +15,6 @@ public interface CategoryMapper {
     // Request -> Entity (Bỏ qua ID vì tự tăng)
     @Mapping(target = "categoryId", ignore = true)
     @Mapping(target = "products", ignore = true) // List sản phẩm không cần map khi tạo
+    @Mapping(target = "status", ignore = true)
     Category toEntity(CategoryRequest request);
 }
