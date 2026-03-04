@@ -1,6 +1,8 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.CancelOrderRequest;
+import com.CocOgreen.CenFra.MS.dto.ConsolidateOrdersRequest;
+import com.CocOgreen.CenFra.MS.dto.ConsolidatedOrderResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
@@ -71,5 +73,12 @@ public class StoreOrderController {
             @PathVariable Integer id,
             @Valid @RequestBody CancelOrderRequest request) {
         return ResponseEntity.ok(service.cancelOrder(id, request));
+    }
+
+    @PostMapping("/consolidate")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
+    public ResponseEntity<ConsolidatedOrderResponse> consolidate(
+            @Valid @RequestBody ConsolidateOrdersRequest request) {
+        return ResponseEntity.ok(service.consolidateOrders(request.getOrderIds()));
     }
 }

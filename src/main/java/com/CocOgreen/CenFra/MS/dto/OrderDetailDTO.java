@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderDetailDTO {
-    private Integer detailId;
+    private Integer orderDetailId;
     private Integer productId;
+    private String productName;
+    private String unit;
     private Integer quantity;
 }
