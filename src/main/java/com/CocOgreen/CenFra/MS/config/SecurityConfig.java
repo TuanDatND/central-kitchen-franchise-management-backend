@@ -34,61 +34,63 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
                 http
-                                .csrf(csrf -> csrf.disable())
+                        .csrf(csrf -> csrf.disable())
 
-                                .cors(cors -> {
-                                }) // bật CORS dùng bean bên dưới
+                        .cors(cors -> {}) // bật CORS dùng bean bên dưới
 
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionManagement(session ->
+                                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        )
 
-                                .exceptionHandling(ex -> ex
-                                                .authenticationEntryPoint((request, response, e) -> response
-                                                                .setStatus(HttpServletResponse.SC_UNAUTHORIZED))
-                                                .accessDeniedHandler((request, response, e) -> response
-                                                                .setStatus(HttpServletResponse.SC_FORBIDDEN)))
+                        .exceptionHandling(ex -> ex
+                                .authenticationEntryPoint((request, response, e) ->
+                                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED))
+                                .accessDeniedHandler((request, response, e) ->
+                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN))
+                        )
 
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(
-                                                                "/auth/login",
-                                                                "/auth/refresh",
-                                                                "/swagger-ui/**",
-                                                                "/v3/api-docs/**")
-                                                .permitAll()
-                                                .anyRequest().authenticated())
+                        .authorizeHttpRequests(auth -> auth
+                                .requestMatchers(
+                                        "/auth/login",
+                                        "/auth/refresh",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**"
+                                ).permitAll()
+                                .anyRequest().authenticated()
+                        )
 
-                                .addFilterBefore(jwtFilter,
-                                                UsernamePasswordAuthenticationFilter.class);
+                        .addFilterBefore(jwtFilter,
+                                UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
         }
-
         @Bean
         public AuthenticationManager authenticationManager(
-                        AuthenticationConfiguration config) throws Exception {
+                AuthenticationConfiguration config) throws Exception {
                 return config.getAuthenticationManager();
         }
-
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
 
                 CorsConfiguration config = new CorsConfiguration();
 
                 List<String> originPatterns = Arrays.stream(corsAllowedOriginPatterns.split(","))
-                                .map(String::trim)
-                                .filter(s -> !s.isEmpty())
-                                .collect(Collectors.toList());
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
                 config.setAllowedOriginPatterns(originPatterns);
 
                 config.setAllowedMethods(List.of(
-                                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                        "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+                ));
 
                 config.setAllowedHeaders(List.of("*"));
                 config.setExposedHeaders(List.of("Authorization"));
 
                 config.setAllowCredentials(true);
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                UrlBasedCorsConfigurationSource source =
+                        new UrlBasedCorsConfigurationSource();
 
                 source.registerCorsConfiguration("/**", config);
 
