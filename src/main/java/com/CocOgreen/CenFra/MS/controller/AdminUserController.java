@@ -1,9 +1,8 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.AdminUserResponse;
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateUserRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateUserActiveRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateUserRoleRequest;
 import com.CocOgreen.CenFra.MS.service.AdminUserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -20,8 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/users")
@@ -46,23 +46,17 @@ public class AdminUserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.createUser(request));
     }
 
-    @PatchMapping("/{id}/role")
-    public ResponseEntity<AdminUserResponse> updateRole(
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateUserRoleRequest request) {
-        return ResponseEntity.ok(adminUserService.updateRole(id, request));
-    }
-
-    @PatchMapping("/{id}/active")
-    public ResponseEntity<AdminUserResponse> updateActive(
-            @PathVariable Integer id,
-            @Valid @RequestBody UpdateUserActiveRequest request) {
-        return ResponseEntity.ok(adminUserService.updateActive(id, request));
+            @Valid @RequestBody com.CocOgreen.CenFra.MS.dto.UpdateUserRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(adminUserService.updateUser(id, request),
+                "Cập nhật thông tin người dùng thành công"));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteUser(@PathVariable Integer id) {
         adminUserService.softDeleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success(Map.of(), "Xóa mềm người dùng thành công"));
     }
 }

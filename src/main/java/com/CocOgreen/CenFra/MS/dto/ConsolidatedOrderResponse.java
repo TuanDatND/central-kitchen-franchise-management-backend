@@ -12,8 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConsolidatedOrderResponse {
+    private Integer productId;
+    private Integer quantity;
+    private Instant suggestedStartDate;
     private BasicInfo basicInfo;
-    private List<ManufacturingRequestBody> manufacturingOrders;
 
     @Data
     @NoArgsConstructor
@@ -23,14 +25,5 @@ public class ConsolidatedOrderResponse {
         private String consolidatedBy;
         private int totalOrders;
         private List<Integer> orderIds;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ManufacturingRequestBody {
-        private Integer productId;
-        private Integer quantity;
-        private Instant startDate;
     }
 }
