@@ -10,12 +10,17 @@ import com.CocOgreen.CenFra.MS.repository.ManufacturingOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.entity.ProductBatch;
+import com.CocOgreen.CenFra.MS.enums.BatchStatus;
+import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
+import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +35,7 @@ public class ManufacturingOrderService {
     private final ManufacturingOrderRepository manufacturingOrderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductBatchRepository productBatchRepository;
     private final ManufacturingOrderMapper manufacturingOrderMapper;
 
     /**
@@ -97,12 +103,33 @@ public class ManufacturingOrderService {
      */
     @Transactional
     public ManuOrderResponse updateStatus(Integer id, ManuOrderStatus newStatus) {
-        // Tìm MO theo ID
+        // Tìm MO theo ID, ném ResourceNotFoundException nếu không tìm thấy
         ManufacturingOrder order = manufacturingOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Lệnh sản xuất với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lệnh sản xuất với ID: " + id));
+
+        // Logic sinh tự động Lô hạng (ProductBatch) khi lệnh sang trạng thái COMPLETED
+        if (newStatus == ManuOrderStatus.COMPLETED && order.getStatus() != ManuOrderStatus.COMPLETED) {
+            ProductBatch newBatch = new ProductBatch();
+            newBatch.setProduct(order.getProduct());
+            newBatch.setManufacturingOrder(order);
+            // Mã lô hàng: BATCH-MãLệnh-Timestamp
+            newBatch.setBatchCode("BATCH-" + order.getOrderCode() + "-" + System.currentTimeMillis());
+            newBatch.setInitialQuantity(order.getQuantityPlanned());
+            newBatch.setCurrentQuantity(0); // Sẽ được cập nhật sau khi nhận kho thực tế
+            newBatch.setStatus(BatchStatus.WAITING_FOR_STOCK);
+            newBatch.setManufacturingDate(LocalDate.now()); // Ngày sản xuất thực tế bằng ngày hiện tại
+            newBatch.setExpiryDate(LocalDate.now().plusDays(7)); // Hạn sử dụng mặc định 7 ngày
+
+            productBatchRepository.save(newBatch);
+        }
 
         // Cập nhật trạng thái mới
         order.setStatus(newStatus);
+
+        // Nếu chuyển sang trạng thái COOKING thì gán thời gian bắt đầu
+        if (newStatus == ManuOrderStatus.COOKING && order.getStartDate() == null) {
+            order.setStartDate(Instant.now());
+        }
 
         // Nếu chuyển sang trạng thái COMPLETED thì gán thời gian kết thúc
         if (newStatus == ManuOrderStatus.COMPLETED) {
