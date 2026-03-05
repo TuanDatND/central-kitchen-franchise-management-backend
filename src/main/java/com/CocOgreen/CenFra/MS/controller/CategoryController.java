@@ -3,6 +3,7 @@ package com.CocOgreen.CenFra.MS.controller;
 import com.CocOgreen.CenFra.MS.dto.request.CategoryRequest;
 import com.CocOgreen.CenFra.MS.dto.response.CategoryResponse;
 import com.CocOgreen.CenFra.MS.service.CategoryService;
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,38 +26,41 @@ public class CategoryController {
     @GetMapping
     @Operation(summary = "Lấy danh sách danh mục")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
+        List<CategoryResponse> categories = categoryService.getAllCategories();
+        return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách danh mục thành công"));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy chi tiết danh mục")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Integer id) {
-        return ResponseEntity.ok(categoryService.getCategoryById(id));
+    public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(@PathVariable Integer id) {
+        CategoryResponse category = categoryService.getCategoryById(id);
+        return ResponseEntity.ok(ApiResponse.success(category, "Lấy thông tin danh mục thành công"));
     }
 
     @PostMapping
     @Operation(summary = "Tạo danh mục mới")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request) {
+    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest request) {
         CategoryResponse response = categoryService.createCategory(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo danh mục thành công"));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật danh mục")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable Integer id,
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable Integer id,
             @Valid @RequestBody CategoryRequest request) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, request));
+        CategoryResponse response = categoryService.updateCategory(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật danh mục thành công"));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa danh mục")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Integer id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Xóa danh mục thành công"));
     }
 }
