@@ -3,6 +3,7 @@ package com.CocOgreen.CenFra.MS.controller;
 import com.CocOgreen.CenFra.MS.dto.request.ProductRequest;
 import com.CocOgreen.CenFra.MS.dto.response.ProductResponse;
 import com.CocOgreen.CenFra.MS.service.ProductService;
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,38 +26,41 @@ public class ProductController {
     @GetMapping
     @Operation(summary = "Lấy danh sách sản phẩm")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
+        List<ProductResponse> products = productService.getAllProducts();
+        return ResponseEntity.ok(ApiResponse.success(products, "Lấy danh sách sản phẩm thành công"));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy chi tiết sản phẩm")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Integer id) {
-        return ResponseEntity.ok(productService.getProductById(id));
+    public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Integer id) {
+        ProductResponse product = productService.getProductById(id);
+        return ResponseEntity.ok(ApiResponse.success(product, "Lấy thông tin sản phẩm thành công"));
     }
 
     @PostMapping
     @Operation(summary = "Tạo sản phẩm mới")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductRequest request) {
         ProductResponse response = productService.createProduct(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo sản phẩm thành công"));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật sản phẩm")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Integer id,
+    public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable Integer id,
             @Valid @RequestBody ProductRequest request) {
-        return ResponseEntity.ok(productService.updateProduct(id, request));
+        ProductResponse response = productService.updateProduct(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật sản phẩm thành công"));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa sản phẩm")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Integer id) {
         productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Xóa sản phẩm thành công"));
     }
 }
