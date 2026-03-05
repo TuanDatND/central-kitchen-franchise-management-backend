@@ -7,6 +7,7 @@ import com.CocOgreen.CenFra.MS.dto.UpdateStoreManagerRequest;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -94,12 +95,12 @@ public class AdminStoreService {
 
     private Store findStore(Integer storeId) {
         return storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("Store not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng"));
     }
 
     private User resolveStoreManager(Integer userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Manager user not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản quản lý"));
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new IllegalArgumentException("Manager user is inactive");
         }

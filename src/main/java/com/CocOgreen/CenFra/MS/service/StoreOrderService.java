@@ -14,6 +14,7 @@ import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
+import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ProductRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
@@ -72,8 +73,7 @@ public class StoreOrderService {
         StoreOrder order = new StoreOrder(
                 generateOrderCode(),
                 store,
-                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant())
-        );
+                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
@@ -98,7 +98,8 @@ public class StoreOrderService {
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
-        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
+        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF,
+                RoleName.ADMIN)) {
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);
@@ -119,7 +120,8 @@ public class StoreOrderService {
             if (!managerUsername.equals(auth.getName())) {
                 throw new AccessDeniedException("You can only view your store orders");
             }
-        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
+        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF,
+                RoleName.ADMIN)) {
             throw new AccessDeniedException("You do not have permission to view this order");
         }
 
@@ -144,7 +146,8 @@ public class StoreOrderService {
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.approve();
-        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null, "Order approved successfully");
+        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null,
+                "Order approved successfully");
     }
 
     @Transactional
@@ -154,11 +157,12 @@ public class StoreOrderService {
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.cancel();
-        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(), "Order cancelled successfully");
+        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(),
+                "Order cancelled successfully");
     }
 
     @Transactional(readOnly = true)
-    public ConsolidatedOrderResponse consolidateOrders(List<Integer> orderIds) {
+    public List<ConsolidatedOrderResponse> consolidateOrders(List<Integer> orderIds) {
         Authentication auth = getAuthentication();
         if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
             throw new AccessDeniedException("Only supply coordinator can consolidate orders");
@@ -194,27 +198,24 @@ public class StoreOrderService {
         }
 
         Instant suggestedStartDate = Instant.now();
-        List<ConsolidatedOrderResponse.ManufacturingRequestBody> manufacturingOrders = totalQuantityByProduct.entrySet()
-                .stream()
-                .map(entry -> new ConsolidatedOrderResponse.ManufacturingRequestBody(
-                        entry.getKey(),
-                        entry.getValue(),
-                        suggestedStartDate
-                ))
-                .toList();
-
         ConsolidatedOrderResponse.BasicInfo basicInfo = new ConsolidatedOrderResponse.BasicInfo(
                 LocalDateTime.now(),
                 auth.getName(),
                 orders.size(),
-                uniqueOrderIds
-        );
+                uniqueOrderIds);
 
-        return new ConsolidatedOrderResponse(basicInfo, manufacturingOrders);
+        return totalQuantityByProduct.entrySet().stream()
+                .map(entry -> new ConsolidatedOrderResponse(
+                        entry.getKey(),
+                        entry.getValue(),
+                        suggestedStartDate,
+                        basicInfo))
+                .toList();
     }
 
     private StoreOrder findOrder(Integer id) {
-        return storeOrderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+        return storeOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
     }
 
     private Authentication getAuthentication() {
@@ -243,7 +244,8 @@ public class StoreOrderService {
     }
 
     private User getCurrentUser(String username) {
-        return userRepository.findByUserName(username).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
     }
 
     private Store resolveStoreForCreate(Authentication auth, Integer storeIdFromRequest) {
@@ -255,7 +257,7 @@ public class StoreOrderService {
                 throw new IllegalArgumentException("storeId is required for admin");
             }
             return storeRepository.findById(storeIdFromRequest)
-                    .orElseThrow(() -> new RuntimeException("Store not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng"));
         }
         throw new AccessDeniedException("You do not have permission to create order");
     }
@@ -263,7 +265,7 @@ public class StoreOrderService {
     private Store resolveStoreByManager(String username) {
         User user = getCurrentUser(username);
         return storeRepository.findByManager_UserId(user.getUserId())
-                .orElseThrow(() -> new RuntimeException("Store not found for this manager"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng cho tài khoản này"));
     }
 
     private Map<Integer, Product> resolveProducts(List<OrderLineRequest> details) {
@@ -294,11 +296,11 @@ public class StoreOrderService {
     }
 
     private OrderActionResponseDTO buildActionResponse(StoreOrder order,
-                                                       StoreOrderStatus previousStatus,
-                                                       User actorUser,
-                                                       LocalDateTime actionAt,
-                                                       String cancelReason,
-                                                       String message) {
+            StoreOrderStatus previousStatus,
+            User actorUser,
+            LocalDateTime actionAt,
+            String cancelReason,
+            String message) {
         LocalDate deliveryDate = toLocalDate(order.getDeliveryDate());
         String fullName = actorUser.getFullName();
         if (fullName == null || fullName.isBlank()) {
@@ -316,8 +318,7 @@ public class StoreOrderService {
                 actor,
                 actionAt,
                 cancelReason,
-                message
-        );
+                message);
     }
 
     private LocalDate toLocalDate(Date date) {
