@@ -15,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/stores")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Dev 1 - Store Management", description = "APIs quản lý cửa hàng nhượng quyền. ADMIN thêm/sửa/xóa, các role đã đăng nhập được xem.")
+@Tag(name = "Dev 1 - Store Management", description = "APIs quản lý cửa hàng nhượng quyền. ADMIN thêm/sửa/ngưng hoạt động, các role đã đăng nhập được xem.")
 public class AdminStoreController {
     private final AdminStoreService adminStoreService;
 
@@ -72,18 +71,10 @@ public class AdminStoreController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Cập nhật cửa hàng", description = "ADMIN cập nhật từng phần thông tin cửa hàng bằng một endpoint PATCH duy nhất.")
+    @Operation(summary = "Cập nhật cửa hàng", description = "ADMIN cập nhật từng phần thông tin cửa hàng, bao gồm cả bật hoặc ngưng hoạt động qua trường isActive.")
     public ResponseEntity<ApiResponse<AdminStoreResponse>> updateStore(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateStoreRequest request) {
         return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateStore(id, request), "Cập nhật cửa hàng thành công"));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Xóa cửa hàng", description = "ADMIN xóa cửa hàng. Hệ thống sẽ chặn nếu cửa hàng đã có đơn hàng.")
-    public ResponseEntity<ApiResponse<Void>> deleteStore(@PathVariable Integer id) {
-        adminStoreService.deleteStore(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Xóa cửa hàng thành công"));
     }
 }

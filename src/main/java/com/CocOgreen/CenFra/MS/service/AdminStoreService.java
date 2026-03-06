@@ -5,7 +5,6 @@ import com.CocOgreen.CenFra.MS.dto.CreateStoreRequest;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreRequest;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
-import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AdminStoreService {
     private final StoreRepository storeRepository;
-    private final StoreOrderRepository storeOrderRepository;
 
     @Transactional(readOnly = true)
     public Page<AdminStoreResponse> listStores(Boolean active, int page, int size) {
@@ -72,15 +70,6 @@ public class AdminStoreService {
             store.setIsActive(request.getIsActive());
         }
         return toResponse(store);
-    }
-
-    @Transactional
-    public void deleteStore(Integer storeId) {
-        Store store = findStore(storeId);
-        if (storeOrderRepository.countByStore_StoreId(storeId) > 0) {
-            throw new IllegalArgumentException("Không thể xóa cửa hàng đã có đơn hàng");
-        }
-        storeRepository.delete(store);
     }
 
     private Store findStore(Integer storeId) {
