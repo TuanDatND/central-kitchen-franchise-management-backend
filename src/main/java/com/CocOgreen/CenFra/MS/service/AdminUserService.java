@@ -2,10 +2,9 @@ package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.AdminUserResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateUserRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateUserActiveRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateUserRoleRequest;
 import com.CocOgreen.CenFra.MS.entity.Role;
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.repository.RoleRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,18 +53,25 @@ public class AdminUserService {
     }
 
     @Transactional
-    public AdminUserResponse updateRole(Integer userId, UpdateUserRoleRequest request) {
+    public AdminUserResponse updateUser(Integer userId, com.CocOgreen.CenFra.MS.dto.UpdateUserRequest request) {
         User user = findUser(userId);
-        Role role = roleRepository.findByRoleName(request.getRole())
-                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
-        user.setRole(role);
-        return toResponse(user);
-    }
-
-    @Transactional
-    public AdminUserResponse updateActive(Integer userId, UpdateUserActiveRequest request) {
-        User user = findUser(userId);
-        user.setIsActive(request.getIsActive());
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        if (request.getRole() != null) {
+            Role role = roleRepository.findByRoleName(request.getRole())
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+            user.setRole(role);
+        }
+        if (request.getIsActive() != null) {
+            user.setIsActive(request.getIsActive());
+        }
         return toResponse(user);
     }
 
@@ -77,7 +83,7 @@ public class AdminUserService {
 
     private User findUser(Integer userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
     }
 
     private AdminUserResponse toResponse(User user) {
@@ -87,7 +93,6 @@ public class AdminUserService {
                 user.getFullName(),
                 user.getEmail(),
                 user.getRole().getRoleName(),
-                user.getIsActive()
-        );
+                user.getIsActive());
     }
 }
