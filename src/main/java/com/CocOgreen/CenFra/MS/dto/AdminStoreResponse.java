@@ -13,7 +13,4 @@ public class AdminStoreResponse {
     private String address;
     private String phone;
     private Boolean isActive;
-    private Integer managerUserId;
-    private String managerUsername;
-    private String managerFullName;
 }

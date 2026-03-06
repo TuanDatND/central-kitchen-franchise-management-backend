@@ -21,6 +21,8 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer>
 
     Page<StoreOrder> findByStore_StoreIdAndStatus(Integer storeId, StoreOrderStatus status, Pageable pageable);
 
+    long countByStore_StoreId(Integer storeId);
+
     long countByStatus(StoreOrderStatus status);
 
     long countByOrderDateBetween(Date fromInclusive, Date toExclusive);
