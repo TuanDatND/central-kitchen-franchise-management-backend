@@ -100,4 +100,11 @@ public class StoreOrderController {
                 )
         );
     }
+
+    @PostMapping("/consolidate")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
+    public ResponseEntity<ConsolidatedOrderResponse> consolidate(
+            @Valid @RequestBody ConsolidateOrdersRequest request) {
+        return ResponseEntity.ok(service.consolidateOrders(request.getOrderIds()));
+    }
 }

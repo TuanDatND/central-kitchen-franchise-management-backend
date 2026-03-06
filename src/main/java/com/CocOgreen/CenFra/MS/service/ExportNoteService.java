@@ -35,7 +35,7 @@ public class ExportNoteService {
         return exportNoteRepositoty.findAll().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
     }
 
-    public ExportNoteDto findById(Integer id) {
+  public ExportNoteDto findById(Integer id) {
         ExportNote note = exportNoteRepositoty.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("No ExportNote found with id: " + id));
         return exportNoteMapper.toDto(note);

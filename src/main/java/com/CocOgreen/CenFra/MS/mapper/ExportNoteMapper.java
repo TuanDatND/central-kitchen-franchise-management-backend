@@ -6,7 +6,7 @@ import com.CocOgreen.CenFra.MS.entity.ExportNote;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ExportItemMapper.class})
 public interface ExportNoteMapper {
 
     @Mapping(target = "storeOrderId", source = "storeOrder.orderId")
