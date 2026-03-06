@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.AdminDashboardResponse;
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.service.AdminDashboardService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,11 @@ public class AdminDashboardController {
     private final AdminDashboardService adminDashboardService;
 
     @GetMapping
-    public ResponseEntity<AdminDashboardResponse> overview(
+    public ResponseEntity<ApiResponse<AdminDashboardResponse>> overview(
             @RequestParam(defaultValue = "5") int topStoresLimit) {
-        return ResponseEntity.ok(adminDashboardService.getOverview(topStoresLimit));
+        return ResponseEntity.ok(ApiResponse.success(
+                adminDashboardService.getOverview(topStoresLimit),
+                "Lấy dữ liệu tổng quan thành công"
+        ));
     }
 }

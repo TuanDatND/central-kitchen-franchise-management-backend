@@ -4,7 +4,9 @@ import com.CocOgreen.CenFra.MS.dto.CancelOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.ConsolidateOrdersRequest;
 import com.CocOgreen.CenFra.MS.dto.ConsolidatedOrderResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreOrderRequest;
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.service.StoreOrderService;
@@ -34,51 +36,71 @@ public class StoreOrderController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','ADMIN')")
-    public ResponseEntity<StoreOrderDTO> create(@Valid @RequestBody CreateStoreOrderRequest request) {
-        return ResponseEntity.ok(service.createOrder(request));
+    public ResponseEntity<ApiResponse<StoreOrderDTO>> create(@Valid @RequestBody CreateStoreOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(service.createOrder(request), "Tạo đơn thành công"));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','SUPPLY_COORDINATOR','MANAGER','CENTRAL_KITCHEN_STAFF','ADMIN')")
-    public ResponseEntity<Page<StoreOrderDTO>> list(
+    public ResponseEntity<ApiResponse<PagedData<StoreOrderDTO>>> list(
             @RequestParam(required = false) StoreOrderStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         int normalizedSize = Math.min(Math.max(size, 1), 100);
         int normalizedPage = Math.max(page, 0);
-        return ResponseEntity.ok(service.listOrders(status, normalizedPage, normalizedSize));
+        Page<StoreOrderDTO> orders = service.listOrders(status, normalizedPage, normalizedSize);
+        PagedData<StoreOrderDTO> data = new PagedData<>(
+                orders.getContent(),
+                orders.getNumber(),
+                orders.getSize(),
+                orders.getTotalElements(),
+                orders.getTotalPages(),
+                orders.isFirst(),
+                orders.isLast());
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách đơn thành công"));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('FRANCHISE_STORE_STAFF','SUPPLY_COORDINATOR','MANAGER','CENTRAL_KITCHEN_STAFF','ADMIN')")
-    public ResponseEntity<StoreOrderDTO> detail(@PathVariable Integer id) {
-        return ResponseEntity.ok(service.getOrderDetail(id));
+    public ResponseEntity<ApiResponse<StoreOrderDTO>> detail(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(service.getOrderDetail(id), "Lấy chi tiết đơn thành công"));
     }
 
     @GetMapping("/dashboard/top-stores")
     @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> topStores(@RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(service.getTopStoresByOrderCount(limit));
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> topStores(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity
+                .ok(ApiResponse.success(service.getTopStoresByOrderCount(limit), "Lấy top cửa hàng thành công"));
     }
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
-    public ResponseEntity<OrderActionResponseDTO> approve(@PathVariable Integer id) {
-        return ResponseEntity.ok(service.approveOrder(id));
+    public ResponseEntity<ApiResponse<OrderActionResponseDTO>> approve(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(service.approveOrder(id), "Duyệt đơn thành công"));
     }
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER','ADMIN')")
-    public ResponseEntity<OrderActionResponseDTO> cancel(
+    public ResponseEntity<ApiResponse<OrderActionResponseDTO>> cancel(
             @PathVariable Integer id,
             @Valid @RequestBody CancelOrderRequest request) {
-        return ResponseEntity.ok(service.cancelOrder(id, request));
+        return ResponseEntity.ok(ApiResponse.success(service.cancelOrder(id, request), "Hủy đơn thành công"));
     }
 
     @PostMapping("/consolidate")
     @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-    public ResponseEntity<ConsolidatedOrderResponse> consolidate(
+    public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidate(
             @Valid @RequestBody ConsolidateOrdersRequest request) {
-        return ResponseEntity.ok(service.consolidateOrders(request.getOrderIds()));
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        service.consolidateOrders(
+                                request.getProductId(),
+                                request.getOrderIds()
+                        ),
+                        "Gom đơn thành công"
+                )
+        );
     }
 }
