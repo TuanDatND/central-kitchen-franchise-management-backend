@@ -1,18 +1,23 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/inventory-transactions")
+@Tag(name = "Dev 3 - Inventory Transaction API", description = "Lịch sử biến động hàng hóa (Sổ cái kho - Immutable Log)")
 public class InventoryTransactionController {
+    @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy lịch sử mọi biến động Nhập / Xuất / Hủy của toàn bộ lô hàng.")
     @GetMapping
     public ResponseEntity<?> getHistory() {
         return ResponseEntity.ok(List.of(
