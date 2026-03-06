@@ -181,6 +181,10 @@ public class StoreOrderService {
                 .distinct()
                 .toList();
 
+        if (uniqueOrderIds.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
+        }
+
         List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
 
         if (orders.size() != uniqueOrderIds.size()) {
