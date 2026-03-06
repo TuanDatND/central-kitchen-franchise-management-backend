@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.controller;
 
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteRequestDto;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
@@ -24,18 +25,21 @@ public class ExportNoteController {
     }
 
     @PostMapping("/createManualNote")
-    public ResponseEntity<ExportNoteDto> createManualNote(@RequestBody ManualExportRequest request) {
-        return ResponseEntity.ok(exportNoteService.createExportFromManualBatches(request));
+    public ResponseEntity<ApiResponse<ExportNoteDto>> createManualNote(@RequestBody ManualExportRequest request) {
+        ExportNoteDto response = exportNoteService.createExportFromManualBatches(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Thành Công"));
     }
 
-    @PostMapping("/createAutoNote/{storeId}")
-    public ResponseEntity<ExportNoteDto> createAutoNote(@PathVariable Integer storeId) {
-        return ResponseEntity.ok(exportNoteService.createExportFromOrder(storeId));
+    @PostMapping("/createAutoNote/{storeOderId}")
+    public ResponseEntity<ApiResponse<ExportNoteDto>> createAutoNote(@PathVariable Integer storeOderId) {
+        ExportNoteDto response = exportNoteService.createExportFromOrder(storeOderId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Thành Công"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getExportNotesById(@PathVariable Integer id) {
-        return ResponseEntity.ok(exportNoteService.findById(id));
+    public ResponseEntity<ApiResponse<?>> getExportNotesById(@PathVariable Integer id) {
+        ExportNoteDto response = exportNoteService.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm thành công"));
     }
 
     @PutMapping("/{id}/ship")
