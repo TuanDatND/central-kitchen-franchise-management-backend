@@ -14,7 +14,7 @@ import java.util.List;
 public class ConsolidatedOrderResponse {
     private Integer productId;
     private Integer quantity;
-    private Instant suggestedStartDate;
+    private Instant tartDate;
     private BasicInfo basicInfo;
 
     @Data

@@ -162,7 +162,9 @@ public class StoreOrderService {
     }
 
     @Transactional(readOnly = true)
-    public ConsolidatedOrderResponse consolidateOrders(List<Integer> orderIds) {
+    public ConsolidatedOrderResponse consolidateOrders(
+            Integer productId,
+            List<Integer> orderIds) {
 
         Authentication auth = getAuthentication();
 
@@ -178,10 +180,6 @@ public class StoreOrderService {
                 .filter(id -> id != null && id > 0)
                 .distinct()
                 .toList();
-
-        if (uniqueOrderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
-        }
 
         List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
 
@@ -196,19 +194,18 @@ public class StoreOrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only APPROVED orders can be consolidated");
         }
 
-        Map<Integer, Integer> totalQuantityByProduct = new LinkedHashMap<>();
+        int totalQuantity = 0;
 
         for (StoreOrder order : orders) {
+
             for (OrderDetail detail : order.getOrderDetails()) {
 
-                Product product = detail.getProduct();
+                if (detail.getProduct().getProductId().equals(productId)) {
+                    totalQuantity += detail.getQuantity();
+                }
 
-                totalQuantityByProduct.merge(
-                        product.getProductId(),
-                        detail.getQuantity(),
-                        Integer::sum
-                );
             }
+
         }
 
         Instant suggestedStartDate = Instant.now();
@@ -221,73 +218,13 @@ public class StoreOrderService {
                         uniqueOrderIds
                 );
 
-        Map.Entry<Integer, Integer> entry =
-                totalQuantityByProduct.entrySet().iterator().next();
-
         return new ConsolidatedOrderResponse(
-                entry.getKey(),
-                entry.getValue(),
+                productId,
+                totalQuantity,
                 suggestedStartDate,
                 basicInfo
         );
     }
-
-    @Transactional(readOnly = true)
-    public ConsolidatedOrderResponse consolidateOrders(List<Integer> orderIds) {
-        Authentication auth = getAuthentication();
-        if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
-            throw new AccessDeniedException("Only supply coordinator can consolidate orders");
-        }
-        if (orderIds == null || orderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 orderIds are required");
-        }
-
-        List<Integer> uniqueOrderIds = orderIds.stream()
-                .filter(id -> id != null && id > 0)
-                .distinct()
-                .toList();
-        if (uniqueOrderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
-        }
-
-        List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
-        if (orders.size() != uniqueOrderIds.size()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
-        }
-
-        boolean hasNonApproved = orders.stream().anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
-        if (hasNonApproved) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only APPROVED orders can be consolidated");
-        }
-
-        Map<Integer, Integer> totalQuantityByProduct = new LinkedHashMap<>();
-        for (StoreOrder order : orders) {
-            for (OrderDetail detail : order.getOrderDetails()) {
-                Product product = detail.getProduct();
-                totalQuantityByProduct.merge(product.getProductId(), detail.getQuantity(), Integer::sum);
-            }
-        }
-
-        Instant suggestedStartDate = Instant.now();
-        List<ConsolidatedOrderResponse.ManufacturingRequestBody> manufacturingOrders = totalQuantityByProduct.entrySet()
-                .stream()
-                .map(entry -> new ConsolidatedOrderResponse.ManufacturingRequestBody(
-                        entry.getKey(),
-                        entry.getValue(),
-                        suggestedStartDate
-                ))
-                .toList();
-
-        ConsolidatedOrderResponse.BasicInfo basicInfo = new ConsolidatedOrderResponse.BasicInfo(
-                LocalDateTime.now(),
-                auth.getName(),
-                orders.size(),
-                uniqueOrderIds
-        );
-
-        return new ConsolidatedOrderResponse(basicInfo, manufacturingOrders);
-    }
-
     private StoreOrder findOrder(Integer id) {
         return storeOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));

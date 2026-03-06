@@ -95,16 +95,12 @@ public class StoreOrderController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        service.consolidateOrders(request.getOrderIds()),
+                        service.consolidateOrders(
+                                request.getProductId(),
+                                request.getOrderIds()
+                        ),
                         "Gom đơn thành công"
                 )
         );
-    }
-
-    @PostMapping("/consolidate")
-    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-    public ResponseEntity<ConsolidatedOrderResponse> consolidate(
-            @Valid @RequestBody ConsolidateOrdersRequest request) {
-        return ResponseEntity.ok(service.consolidateOrders(request.getOrderIds()));
     }
 }
