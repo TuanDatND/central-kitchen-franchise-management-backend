@@ -1,26 +1,28 @@
 package com.CocOgreen.CenFra.MS.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
-import com.CocOgreen.CenFra.MS.dto.OrderDetailDTO;
-import com.CocOgreen.CenFra.MS.entity.*;
+import com.CocOgreen.CenFra.MS.entity.ExportItem;
+import com.CocOgreen.CenFra.MS.entity.ExportNote;
+import com.CocOgreen.CenFra.MS.entity.OrderDetail;
+import com.CocOgreen.CenFra.MS.entity.ProductBatch;
+import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import com.CocOgreen.CenFra.MS.mapper.ExportNoteMapper;
 import com.CocOgreen.CenFra.MS.repository.ExportNoteRepositoty;
-import com.CocOgreen.CenFra.MS.repository.InventoryTransactionRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +54,7 @@ public class ExportNoteService {
     public void deleteNote(Integer id) {
         ExportNote exportNote = exportNoteRepositoty.findById(id).get();
         if (ExportStatus.SHIPPED.equals(exportNote.getStatus())) {
-            throw new RuntimeException("Cannot delete ExportNote which already Shipped");
+            throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete ExportNote which already Shipped");
         }
         exportNote.setStatus(ExportStatus.CANCEL);
     }
@@ -98,7 +100,7 @@ public class ExportNoteService {
                 );
             }
             if (quantity > 0) {
-                throw new RuntimeException(String.format(
+                throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(String.format(
                         "Kho không đủ hàng cho sản phẩm: %s. Còn thiếu: %d %s",
                         orderDetail.getProduct().getProductName(),
                         quantity,
@@ -131,7 +133,7 @@ public class ExportNoteService {
             int manualQuantity = selection.getQuantity();
 
             if (batch.getCurrentQuantity() < manualQuantity) {
-                throw new RuntimeException("Lô hàng " + batch.getBatchCode()
+                throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Lô hàng " + batch.getBatchCode()
                         + " không đủ số lượng tồn kho. (Kho hiện tại: " + batch.getCurrentQuantity() + ")");
             }
 
