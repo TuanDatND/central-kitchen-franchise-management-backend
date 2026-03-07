@@ -62,6 +62,13 @@ public class StoreOrder {
         this.status = StoreOrderStatus.CANCELLED;
     }
 
+    public void markConsolidated() {
+        if (this.status != StoreOrderStatus.APPROVED) {
+            throw new IllegalStateException("Only APPROVED order can be consolidated");
+        }
+        this.status = StoreOrderStatus.CONSOLIDATED;
+    }
+
     public void addOrderDetail(OrderDetail detail) {
         this.orderDetails.add(detail);
         detail.setStoreOrder(this);

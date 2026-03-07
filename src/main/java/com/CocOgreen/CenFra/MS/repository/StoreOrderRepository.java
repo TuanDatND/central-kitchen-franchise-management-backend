@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer> {
@@ -20,6 +21,8 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer>
     Page<StoreOrder> findByStore_StoreId(Integer storeId, Pageable pageable);
 
     Page<StoreOrder> findByStore_StoreIdAndStatus(Integer storeId, StoreOrderStatus status, Pageable pageable);
+
+    long countByStore_StoreId(Integer storeId);
 
     long countByStatus(StoreOrderStatus status);
 
@@ -35,4 +38,14 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer>
              order by count(so.orderId) desc
             """)
     java.util.List<TopStoreOrderProjection> findTopStoresByOrderCount(Pageable pageable);
+
+    @Query("""
+            select distinct so
+              from StoreOrder so
+              join fetch so.orderDetails od
+              join fetch od.product p
+             where so.status = :status
+               and p.productId = :productId
+            """)
+    List<StoreOrder> findDistinctByStatusAndProductId(StoreOrderStatus status, Integer productId);
 }

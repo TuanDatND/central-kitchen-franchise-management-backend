@@ -47,7 +47,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo sản phẩm thành công"));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @Operation(summary = "Cập nhật sản phẩm")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable Integer id,

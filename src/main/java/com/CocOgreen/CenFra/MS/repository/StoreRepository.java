@@ -11,8 +11,6 @@ public interface StoreRepository extends JpaRepository<Store, Integer> {
 
     Optional<Store> findByStoreName(String storeName);
 
-    Optional<Store> findByManager_UserId(Integer userId);
-
     boolean existsByStoreName(String storeName);
 
     boolean existsByStoreNameAndStoreIdNot(String storeName, Integer storeId);
