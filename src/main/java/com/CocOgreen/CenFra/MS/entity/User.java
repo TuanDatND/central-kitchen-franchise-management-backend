@@ -33,11 +33,17 @@ public class User {
     @Column
     private String email;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id")
+    private Store store;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
     @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<ExportNote> exportNotes;
+
     @Column(nullable = false)
     private Boolean isActive;
 

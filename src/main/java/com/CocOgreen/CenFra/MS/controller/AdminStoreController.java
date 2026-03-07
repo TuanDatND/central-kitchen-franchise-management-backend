@@ -4,11 +4,11 @@ import com.CocOgreen.CenFra.MS.dto.AdminStoreResponse;
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreRequest;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
-import com.CocOgreen.CenFra.MS.dto.UpdateStoreActiveRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateStoreInfoRequest;
-import com.CocOgreen.CenFra.MS.dto.UpdateStoreManagerRequest;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreRequest;
 import com.CocOgreen.CenFra.MS.service.AdminStoreService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,11 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/stores")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Dev 1 - Store Management", description = "APIs quản lý cửa hàng nhượng quyền. ADMIN thêm/sửa/ngưng hoạt động, các role đã đăng nhập được xem.")
 public class AdminStoreController {
     private final AdminStoreService adminStoreService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lấy danh sách cửa hàng", description = "Lấy danh sách các cửa hàng nhượng quyền, có thể lọc theo trạng thái hoạt động.")
     public ResponseEntity<ApiResponse<PagedData<AdminStoreResponse>>> listStores(
             @RequestParam(required = false) Boolean active,
             @RequestParam(defaultValue = "0") int page,
@@ -53,34 +55,26 @@ public class AdminStoreController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lấy chi tiết cửa hàng", description = "Xem thông tin chi tiết của một cửa hàng theo ID.")
     public ResponseEntity<ApiResponse<AdminStoreResponse>> getStore(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(adminStoreService.getStore(id), "Lấy thông tin cửa hàng thành công"));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Tạo cửa hàng mới", description = "ADMIN tạo mới một cửa hàng nhượng quyền.")
     public ResponseEntity<ApiResponse<AdminStoreResponse>> createStore(@Valid @RequestBody CreateStoreRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(adminStoreService.createStore(request), "Tạo cửa hàng thành công"));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<AdminStoreResponse>> updateStoreInfo(
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Cập nhật cửa hàng", description = "ADMIN cập nhật từng phần thông tin cửa hàng, bao gồm cả bật hoặc ngưng hoạt động qua trường isActive.")
+    public ResponseEntity<ApiResponse<AdminStoreResponse>> updateStore(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateStoreInfoRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateStoreInfo(id, request), "Cập nhật thông tin cửa hàng thành công"));
-    }
-
-    @PatchMapping("/{id}/manager")
-    public ResponseEntity<ApiResponse<AdminStoreResponse>> updateManager(
-            @PathVariable Integer id,
-            @Valid @RequestBody UpdateStoreManagerRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateManager(id, request), "Cập nhật quản lý cửa hàng thành công"));
-    }
-
-    @PatchMapping("/{id}/active")
-    public ResponseEntity<ApiResponse<AdminStoreResponse>> updateActive(
-            @PathVariable Integer id,
-            @Valid @RequestBody UpdateStoreActiveRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateActive(id, request.getIsActive()), "Cập nhật trạng thái cửa hàng thành công"));
+            @Valid @RequestBody UpdateStoreRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateStore(id, request), "Cập nhật cửa hàng thành công"));
     }
 }

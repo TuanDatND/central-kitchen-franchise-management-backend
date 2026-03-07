@@ -26,5 +26,7 @@ public class CreateUserRequest {
     @NotNull
     private RoleName role;
 
+    private Integer storeId;
+
     private Boolean isActive;
 }
