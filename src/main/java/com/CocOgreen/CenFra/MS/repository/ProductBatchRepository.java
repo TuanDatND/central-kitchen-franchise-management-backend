@@ -1,14 +1,15 @@
 package com.CocOgreen.CenFra.MS.repository;
 
-import com.CocOgreen.CenFra.MS.entity.Product;
-import com.CocOgreen.CenFra.MS.entity.ProductBatch;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.CocOgreen.CenFra.MS.entity.Product;
+import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 
 @Repository
 public interface ProductBatchRepository extends JpaRepository<ProductBatch, Integer> {
@@ -38,3 +39,4 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Inte
     List<ProductBatch> findAvailableProducts(@Param("product") Product product,
                                            @Param("quantity") Integer quantity);
 }
+
