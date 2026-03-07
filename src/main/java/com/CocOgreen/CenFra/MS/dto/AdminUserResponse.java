@@ -16,5 +16,7 @@ public class AdminUserResponse {
     private String fullName;
     private String email;
     private RoleName role;
+    private Integer storeId;
+    private String storeName;
     private Boolean isActive;
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateStoreInfoRequest {
+public class UpdateStoreRequest {
     @Size(max = 255)
     private String storeName;
 
@@ -17,4 +17,6 @@ public class UpdateStoreInfoRequest {
 
     @Size(max = 50)
     private String phone;
+
+    private Boolean isActive;
 }

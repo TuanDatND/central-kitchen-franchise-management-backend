@@ -11,6 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConsolidateOrdersRequest {
-    @NotEmpty
+
+    private Integer productId;
     private List<Integer> orderIds;
+
 }

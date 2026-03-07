@@ -15,6 +15,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     Page<User> findByIsActive(Boolean isActive, Pageable pageable);
 
+    Page<User> findByStore_StoreId(Integer storeId, Pageable pageable);
+
+    Page<User> findByStore_StoreIdAndIsActive(Integer storeId, Boolean isActive, Pageable pageable);
+
     long countByIsActive(Boolean isActive);
 
 }

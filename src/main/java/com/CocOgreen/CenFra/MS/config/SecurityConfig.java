@@ -1,10 +1,13 @@
 package com.CocOgreen.CenFra.MS.config;
 
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.security.JwtFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,8 +19,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @EnableMethodSecurity
@@ -44,9 +51,15 @@ public class SecurityConfig {
 
                         .exceptionHandling(ex -> ex
                                 .authenticationEntryPoint((request, response, e) ->
-                                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED))
+                                        writeErrorResponse(
+                                                response,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Bạn cần đăng nhập để sử dụng API này"))
                                 .accessDeniedHandler((request, response, e) ->
-                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN))
+                                        writeErrorResponse(
+                                                response,
+                                                HttpStatus.FORBIDDEN,
+                                                "Bạn không có quyền truy cập API này"))
                         )
 
                         .authorizeHttpRequests(auth -> auth
@@ -95,5 +108,21 @@ public class SecurityConfig {
                 source.registerCorsConfiguration("/**", config);
 
                 return source;
+        }
+
+        private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message)
+                throws IOException {
+                response.setStatus(status.value());
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+
+                Map<String, Object> error = new LinkedHashMap<>();
+                error.put("code", status == HttpStatus.UNAUTHORIZED ? "UNAUTHORIZED" : "FORBIDDEN");
+                error.put("details", List.of(message));
+                error.put("timestamp", LocalDateTime.now());
+
+                new ObjectMapper()
+                        .findAndRegisterModules()
+                        .writeValue(response.getWriter(), ApiResponse.error(message, error));
         }
 }

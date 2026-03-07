@@ -14,6 +14,7 @@ import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
+import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ProductRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
@@ -72,8 +73,7 @@ public class StoreOrderService {
         StoreOrder order = new StoreOrder(
                 generateOrderCode(),
                 store,
-                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant())
-        );
+                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
@@ -94,11 +94,11 @@ public class StoreOrderService {
 
         Page<StoreOrder> orders;
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            Store store = resolveStoreByManager(auth.getName());
+            Store store = resolveStoreForStaff(auth.getName());
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
-        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
+        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);
@@ -115,11 +115,8 @@ public class StoreOrderService {
         StoreOrder order = findOrder(orderId);
 
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            String managerUsername = order.getStore().getManager().getUserName();
-            if (!managerUsername.equals(auth.getName())) {
-                throw new AccessDeniedException("You can only view your store orders");
-            }
-        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF, RoleName.ADMIN)) {
+            validateStoreStaffOwnership(order, auth.getName());
+        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
             throw new AccessDeniedException("You do not have permission to view this order");
         }
 
@@ -144,25 +141,32 @@ public class StoreOrderService {
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.approve();
-        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null, "Order approved successfully");
+        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null,
+                "Order approved successfully");
     }
 
     @Transactional
     public OrderActionResponseDTO cancelOrder(Integer orderId, CancelOrderRequest request) {
         StoreOrder order = findOrder(orderId);
-        validateOwnershipOrCoordinatorOrAdmin(order);
+        validateCanceller();
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.cancel();
-        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(), "Order cancelled successfully");
+        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(),
+                "Order cancelled successfully");
     }
 
     @Transactional(readOnly = true)
-    public ConsolidatedOrderResponse consolidateOrders(List<Integer> orderIds) {
+    public ConsolidatedOrderResponse consolidateOrders(
+            Integer productId,
+            List<Integer> orderIds) {
+
         Authentication auth = getAuthentication();
+
         if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
             throw new AccessDeniedException("Only supply coordinator can consolidate orders");
         }
+
         if (orderIds == null || orderIds.size() < 2) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 orderIds are required");
         }
@@ -171,50 +175,59 @@ public class StoreOrderService {
                 .filter(id -> id != null && id > 0)
                 .distinct()
                 .toList();
+
         if (uniqueOrderIds.size() < 2) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
         }
 
         List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
+
         if (orders.size() != uniqueOrderIds.size()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
         }
 
-        boolean hasNonApproved = orders.stream().anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
+        boolean hasNonApproved = orders.stream()
+                .anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
+
         if (hasNonApproved) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only APPROVED orders can be consolidated");
         }
 
-        Map<Integer, Integer> totalQuantityByProduct = new LinkedHashMap<>();
+        int totalQuantity = 0;
+
         for (StoreOrder order : orders) {
+
             for (OrderDetail detail : order.getOrderDetails()) {
-                Product product = detail.getProduct();
-                totalQuantityByProduct.merge(product.getProductId(), detail.getQuantity(), Integer::sum);
+
+                if (detail.getProduct().getProductId().equals(productId)) {
+                    totalQuantity += detail.getQuantity();
+                }
+
             }
+
         }
 
         Instant suggestedStartDate = Instant.now();
-        List<ConsolidatedOrderResponse.ManufacturingRequestBody> manufacturingOrders = totalQuantityByProduct.entrySet()
-                .stream()
-                .map(entry -> new ConsolidatedOrderResponse.ManufacturingRequestBody(
-                        entry.getKey(),
-                        entry.getValue(),
-                        suggestedStartDate
-                ))
-                .toList();
 
-        ConsolidatedOrderResponse.BasicInfo basicInfo = new ConsolidatedOrderResponse.BasicInfo(
-                LocalDateTime.now(),
-                auth.getName(),
-                orders.size(),
-                uniqueOrderIds
+        ConsolidatedOrderResponse.BasicInfo basicInfo =
+                new ConsolidatedOrderResponse.BasicInfo(
+                        LocalDateTime.now(),
+                        auth.getName(),
+                        orders.size(),
+                        uniqueOrderIds
+                );
+
+        return new ConsolidatedOrderResponse(
+                productId,
+                totalQuantity,
+                suggestedStartDate,
+                basicInfo
         );
-
-        return new ConsolidatedOrderResponse(basicInfo, manufacturingOrders);
     }
 
     private StoreOrder findOrder(Integer id) {
-        return storeOrderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+        return storeOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
     }
 
     private Authentication getAuthentication() {
@@ -222,17 +235,24 @@ public class StoreOrderService {
     }
 
     private void validateApprover() {
-        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
-            throw new AccessDeniedException("Only supply coordinator, manager or admin can approve order");
+        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            throw new AccessDeniedException("Only supply coordinator or manager can approve order");
         }
     }
 
-    private void validateOwnershipOrCoordinatorOrAdmin(StoreOrder order) {
-        Authentication auth = getAuthentication();
-        if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
-            return;
+    private void validateCanceller() {
+        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            throw new AccessDeniedException("Only supply coordinator or manager can cancel order");
         }
-        throw new AccessDeniedException("You do not have permission to cancel this order");
+    }
+
+    private void validateStoreStaffOwnership(StoreOrder order, String username) {
+        User user = getCurrentUser(username);
+        Integer userStoreId = user.getStore() == null ? null : user.getStore().getStoreId();
+        Integer orderStoreId = order.getStore() == null ? null : order.getStore().getStoreId();
+        if (userStoreId == null || !userStoreId.equals(orderStoreId)) {
+            throw new AccessDeniedException("You can only access your store orders");
+        }
     }
 
     private boolean hasAnyRole(Authentication auth, RoleName... roles) {
@@ -243,27 +263,24 @@ public class StoreOrderService {
     }
 
     private User getCurrentUser(String username) {
-        return userRepository.findByUserName(username).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
     }
 
     private Store resolveStoreForCreate(Authentication auth, Integer storeIdFromRequest) {
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            return resolveStoreByManager(auth.getName());
-        }
-        if (hasAnyRole(auth, RoleName.ADMIN)) {
-            if (storeIdFromRequest == null) {
-                throw new IllegalArgumentException("storeId is required for admin");
-            }
-            return storeRepository.findById(storeIdFromRequest)
-                    .orElseThrow(() -> new RuntimeException("Store not found"));
+            return resolveStoreForStaff(auth.getName());
         }
         throw new AccessDeniedException("You do not have permission to create order");
     }
 
-    private Store resolveStoreByManager(String username) {
+    private Store resolveStoreForStaff(String username) {
         User user = getCurrentUser(username);
-        return storeRepository.findByManager_UserId(user.getUserId())
-                .orElseThrow(() -> new RuntimeException("Store not found for this manager"));
+        if (user.getStore() == null) {
+            throw new ResourceNotFoundException("Không tìm thấy cửa hàng cho tài khoản này");
+        }
+        return storeRepository.findById(user.getStore().getStoreId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng cho tài khoản này"));
     }
 
     private Map<Integer, Product> resolveProducts(List<OrderLineRequest> details) {
@@ -294,11 +311,11 @@ public class StoreOrderService {
     }
 
     private OrderActionResponseDTO buildActionResponse(StoreOrder order,
-                                                       StoreOrderStatus previousStatus,
-                                                       User actorUser,
-                                                       LocalDateTime actionAt,
-                                                       String cancelReason,
-                                                       String message) {
+            StoreOrderStatus previousStatus,
+            User actorUser,
+            LocalDateTime actionAt,
+            String cancelReason,
+            String message) {
         LocalDate deliveryDate = toLocalDate(order.getDeliveryDate());
         String fullName = actorUser.getFullName();
         if (fullName == null || fullName.isBlank()) {
@@ -316,8 +333,7 @@ public class StoreOrderService {
                 actor,
                 actionAt,
                 cancelReason,
-                message
-        );
+                message);
     }
 
     private LocalDate toLocalDate(Date date) {
