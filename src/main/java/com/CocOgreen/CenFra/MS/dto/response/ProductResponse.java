@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 public class ProductResponse {
     private Integer productId;
     private String productName;
-    private String unit;
+    private Integer unitId;
+    private String unitName;
     private String imageUrl;
     private String description;
-    private String status;       // ACTIVE/INACTIVE
+    private String status; // ACTIVE/INACTIVE
     private String categoryName; // Tên danh mục (đã join bảng)
 }
