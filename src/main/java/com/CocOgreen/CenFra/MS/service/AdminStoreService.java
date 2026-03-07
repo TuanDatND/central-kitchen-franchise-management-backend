@@ -72,6 +72,13 @@ public class AdminStoreService {
         return toResponse(store);
     }
 
+    @Transactional
+    public AdminStoreResponse softDeleteStore(Integer storeId) {
+        Store store = findStore(storeId);
+        store.setIsActive(false);
+        return toResponse(store);
+    }
+
     private Store findStore(Integer storeId) {
         return storeRepository.findById(storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng"));

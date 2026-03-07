@@ -156,7 +156,7 @@ public class StoreOrderService {
                 "Order cancelled successfully");
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ConsolidatedOrderResponse consolidateOrders(
             Integer productId,
             List<Integer> orderIds) {
@@ -167,45 +167,72 @@ public class StoreOrderService {
             throw new AccessDeniedException("Only supply coordinator can consolidate orders");
         }
 
-        if (orderIds == null || orderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 orderIds are required");
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        List<StoreOrder> orders;
+        List<Integer> consolidatedOrderIds;
+
+        if (orderIds == null || orderIds.isEmpty()) {
+            orders = storeOrderRepository.findDistinctByStatusAndProductId(StoreOrderStatus.APPROVED, productId);
+            consolidatedOrderIds = orders.stream()
+                    .map(StoreOrder::getOrderId)
+                    .distinct()
+                    .toList();
+        } else {
+            List<Integer> uniqueOrderIds = orderIds.stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+
+            if (uniqueOrderIds.size() < 2) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
+            }
+
+            orders = storeOrderRepository.findAllById(uniqueOrderIds);
+
+            if (orders.size() != uniqueOrderIds.size()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
+            }
+
+            boolean hasIneligibleOrders = orders.stream()
+                    .anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
+
+            if (hasIneligibleOrders) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Only APPROVED orders can be consolidated"
+                );
+            }
+
+            consolidatedOrderIds = uniqueOrderIds;
         }
 
-        List<Integer> uniqueOrderIds = orderIds.stream()
-                .filter(id -> id != null && id > 0)
-                .distinct()
-                .toList();
-
-        if (uniqueOrderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
-        }
-
-        List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
-
-        if (orders.size() != uniqueOrderIds.size()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
-        }
-
-        boolean hasNonApproved = orders.stream()
-                .anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
-
-        if (hasNonApproved) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only APPROVED orders can be consolidated");
+        if (consolidatedOrderIds.size() < 2) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cần ít nhất 2 đơn APPROVED chứa sản phẩm này để gom đơn"
+            );
         }
 
         int totalQuantity = 0;
 
         for (StoreOrder order : orders) {
-
             for (OrderDetail detail : order.getOrderDetails()) {
-
                 if (detail.getProduct().getProductId().equals(productId)) {
                     totalQuantity += detail.getQuantity();
                 }
-
             }
-
         }
+
+        if (totalQuantity <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Không tìm thấy sản phẩm này trong các đơn được chọn để gom"
+            );
+        }
+
+        orders.forEach(StoreOrder::markConsolidated);
 
         Instant suggestedStartDate = Instant.now();
 
@@ -214,7 +241,7 @@ public class StoreOrderService {
                         LocalDateTime.now(),
                         auth.getName(),
                         orders.size(),
-                        uniqueOrderIds
+                        consolidatedOrderIds
                 );
 
         return new ConsolidatedOrderResponse(

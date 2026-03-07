@@ -99,7 +99,7 @@ public class StoreOrderController {
 
     @PostMapping("/consolidate")
     @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-    @Operation(summary = "Gom đơn theo sản phẩm", description = "SUPPLY_COORDINATOR gom nhiều đơn APPROVED theo một sản phẩm để phục vụ lên kế hoạch sản xuất.")
+    @Operation(summary = "Gom đơn theo sản phẩm", description = "SUPPLY_COORDINATOR chỉ cần truyền productId để hệ thống tự gom các đơn APPROVED có chứa sản phẩm đó. Sau khi gom thành công, trạng thái đơn sẽ chuyển sang CONSOLIDATED và không thể gom lại. Có thể truyền thêm orderIds nếu muốn gom thủ công theo danh sách cụ thể.")
     public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidate(
             @Valid @RequestBody ConsolidateOrdersRequest request) {
 
