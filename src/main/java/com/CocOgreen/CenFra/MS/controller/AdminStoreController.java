@@ -15,14 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/stores")
@@ -76,5 +69,12 @@ public class AdminStoreController {
             @PathVariable Integer id,
             @Valid @RequestBody UpdateStoreRequest request) {
         return ResponseEntity.ok(ApiResponse.success(adminStoreService.updateStore(id, request), "Cập nhật cửa hàng thành công"));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ngưng hoạt động cửa hàng", description = "ADMIN xóa mềm cửa hàng bằng cách chuyển isActive về false.")
+    public ResponseEntity<ApiResponse<AdminStoreResponse>> deleteStore(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(adminStoreService.softDeleteStore(id), "Ngưng hoạt động cửa hàng thành công"));
     }
 }
