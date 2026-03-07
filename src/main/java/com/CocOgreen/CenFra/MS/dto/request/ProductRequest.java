@@ -9,8 +9,8 @@ public class ProductRequest {
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String productName;
 
-    @NotBlank(message = "Đơn vị tính không được để trống")
-    private String unit;
+    @NotNull(message = "Phải chọn đơn vị tính")
+    private Integer unitId;
 
     private String imageUrl;
     private String description;

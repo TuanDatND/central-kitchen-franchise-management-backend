@@ -12,7 +12,7 @@ public interface ManufacturingOrderMapper {
     // Entity -> Response
     @Mapping(source = "createdBy.fullName", target = "createdBy") // Lấy tên người tạo
     @Mapping(source = "product.productName", target = "productName")
-    @Mapping(source = "product.unit", target = "unit")
+    @Mapping(source = "product.unit.unitName", target = "unit")
     @Mapping(source = "quantityPlanned", target = "quantity")
     ManuOrderResponse toResponse(ManufacturingOrder order);
 
