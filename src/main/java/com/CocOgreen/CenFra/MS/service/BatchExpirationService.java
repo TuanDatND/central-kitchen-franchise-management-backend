@@ -29,7 +29,7 @@ public class BatchExpirationService {
      * Tạm thời set fixedRate = 60000 (Chạy 1 phút 1 lần) để dễ dàng test chức năng.
      */
     @Transactional
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 0 0 * * *")
     public void markExpiredBatches() {
         LocalDate today = LocalDate.now();
         log.info("BatchExpirationService đang khởi chạy quét các Lô hàng (Batches) hết hạn tại ngày: {}", today);
