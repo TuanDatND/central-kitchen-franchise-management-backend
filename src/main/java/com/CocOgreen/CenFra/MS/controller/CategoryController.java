@@ -47,7 +47,7 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo danh mục thành công"));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @Operation(summary = "Cập nhật danh mục")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable Integer id,
