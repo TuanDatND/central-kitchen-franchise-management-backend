@@ -19,5 +19,7 @@ public class UpdateUserRequest {
 
     private RoleName role;
 
+    private Integer storeId;
+
     private Boolean isActive;
 }

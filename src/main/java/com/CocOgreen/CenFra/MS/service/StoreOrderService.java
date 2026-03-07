@@ -94,12 +94,11 @@ public class StoreOrderService {
 
         Page<StoreOrder> orders;
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            Store store = resolveStoreByManager(auth.getName());
+            Store store = resolveStoreForStaff(auth.getName());
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
-        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF,
-                RoleName.ADMIN)) {
+        } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);
@@ -116,12 +115,8 @@ public class StoreOrderService {
         StoreOrder order = findOrder(orderId);
 
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            String managerUsername = order.getStore().getManager().getUserName();
-            if (!managerUsername.equals(auth.getName())) {
-                throw new AccessDeniedException("You can only view your store orders");
-            }
-        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.CENTRAL_KITCHEN_STAFF,
-                RoleName.ADMIN)) {
+            validateStoreStaffOwnership(order, auth.getName());
+        } else if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
             throw new AccessDeniedException("You do not have permission to view this order");
         }
 
@@ -153,7 +148,7 @@ public class StoreOrderService {
     @Transactional
     public OrderActionResponseDTO cancelOrder(Integer orderId, CancelOrderRequest request) {
         StoreOrder order = findOrder(orderId);
-        validateOwnershipOrCoordinatorOrAdmin(order);
+        validateCanceller();
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(getAuthentication().getName());
         order.cancel();
@@ -229,6 +224,7 @@ public class StoreOrderService {
                 basicInfo
         );
     }
+
     private StoreOrder findOrder(Integer id) {
         return storeOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
@@ -239,17 +235,24 @@ public class StoreOrderService {
     }
 
     private void validateApprover() {
-        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
-            throw new AccessDeniedException("Only supply coordinator, manager or admin can approve order");
+        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            throw new AccessDeniedException("Only supply coordinator or manager can approve order");
         }
     }
 
-    private void validateOwnershipOrCoordinatorOrAdmin(StoreOrder order) {
-        Authentication auth = getAuthentication();
-        if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER, RoleName.ADMIN)) {
-            return;
+    private void validateCanceller() {
+        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            throw new AccessDeniedException("Only supply coordinator or manager can cancel order");
         }
-        throw new AccessDeniedException("You do not have permission to cancel this order");
+    }
+
+    private void validateStoreStaffOwnership(StoreOrder order, String username) {
+        User user = getCurrentUser(username);
+        Integer userStoreId = user.getStore() == null ? null : user.getStore().getStoreId();
+        Integer orderStoreId = order.getStore() == null ? null : order.getStore().getStoreId();
+        if (userStoreId == null || !userStoreId.equals(orderStoreId)) {
+            throw new AccessDeniedException("You can only access your store orders");
+        }
     }
 
     private boolean hasAnyRole(Authentication auth, RoleName... roles) {
@@ -266,21 +269,17 @@ public class StoreOrderService {
 
     private Store resolveStoreForCreate(Authentication auth, Integer storeIdFromRequest) {
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            return resolveStoreByManager(auth.getName());
-        }
-        if (hasAnyRole(auth, RoleName.ADMIN)) {
-            if (storeIdFromRequest == null) {
-                throw new IllegalArgumentException("storeId is required for admin");
-            }
-            return storeRepository.findById(storeIdFromRequest)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng"));
+            return resolveStoreForStaff(auth.getName());
         }
         throw new AccessDeniedException("You do not have permission to create order");
     }
 
-    private Store resolveStoreByManager(String username) {
+    private Store resolveStoreForStaff(String username) {
         User user = getCurrentUser(username);
-        return storeRepository.findByManager_UserId(user.getUserId())
+        if (user.getStore() == null) {
+            throw new ResourceNotFoundException("Không tìm thấy cửa hàng cho tài khoản này");
+        }
+        return storeRepository.findById(user.getStore().getStoreId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cửa hàng cho tài khoản này"));
     }
 

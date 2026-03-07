@@ -54,7 +54,7 @@ public class ExportNoteService {
     public void deleteNote(Integer id) {
         ExportNote exportNote = exportNoteRepositoty.findById(id).get();
         if (ExportStatus.SHIPPED.equals(exportNote.getStatus())) {
-            throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete  which already Shipped");
+            throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete ExportNote which already Shipped");
         }
         exportNote.setStatus(ExportStatus.CANCEL);
     }
