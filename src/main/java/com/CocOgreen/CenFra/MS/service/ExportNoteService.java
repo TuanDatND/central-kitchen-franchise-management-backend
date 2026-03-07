@@ -54,7 +54,7 @@ public class ExportNoteService {
     public void deleteNote(Integer id) {
         ExportNote exportNote = exportNoteRepositoty.findById(id).get();
         if (ExportStatus.SHIPPED.equals(exportNote.getStatus())) {
-            throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete ExportNote which already Shipped");
+            throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete  which already Shipped");
         }
         exportNote.setStatus(ExportStatus.CANCEL);
     }
@@ -74,7 +74,7 @@ public class ExportNoteService {
         for (OrderDetail orderDetail : storeOrdersDetail) {
             int quantity = orderDetail.getQuantity();
 
-            List<ProductBatch> availableBathes = productBatchRepository.findByProductAndCurrentQuantityGreaterThanOrderByExpiryDateAsc(orderDetail.getProduct(), 0);
+            List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
 
             for (ProductBatch batch : availableBathes) {
                 if (quantity <= 0) break;
