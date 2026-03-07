@@ -74,7 +74,7 @@ public class ExportNoteService {
         for (OrderDetail orderDetail : storeOrdersDetail) {
             int quantity = orderDetail.getQuantity();
 
-            List<ProductBatch> availableBathes = productBatchRepository.findByProductAndCurrentQuantityGreaterThanOrderByExpiryDateAsc(orderDetail.getProduct(), 0);
+            List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
 
             for (ProductBatch batch : availableBathes) {
                 if (quantity <= 0) break;

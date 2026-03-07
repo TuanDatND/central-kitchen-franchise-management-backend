@@ -1,12 +1,15 @@
 package com.CocOgreen.CenFra.MS.repository;
 
-import com.CocOgreen.CenFra.MS.entity.Product;
-import com.CocOgreen.CenFra.MS.entity.ProductBatch;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.CocOgreen.CenFra.MS.entity.Product;
+import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 
 @Repository
 public interface ProductBatchRepository extends JpaRepository<ProductBatch, Integer> {
@@ -28,7 +31,12 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Inte
     // Tìm tất cả các lô hàng được tạo ra từ một Lệnh sản xuất cụ thể
     List<ProductBatch> findByManufacturingOrder_ManuOrderId(Integer manuOrderId);
 
-    // TuanDatCutee hehehe
-    List<ProductBatch> findByProductAndCurrentQuantityGreaterThanOrderByExpiryDateAsc(Product product,
-            Integer quantity);
+    //TuanDatCutee hehehe
+    @Query("SELECT e FROM ProductBatch e WHERE e.product = :product " +
+            "AND e.currentQuantity > :quantity " +
+            "AND e.status = 'AVAILABLE' " +
+            "ORDER BY e.expiryDate ASC")
+    List<ProductBatch> findAvailableProducts(@Param("product") Product product,
+                                           @Param("quantity") Integer quantity);
 }
+
