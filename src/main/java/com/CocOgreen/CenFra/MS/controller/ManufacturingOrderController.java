@@ -49,7 +49,7 @@ public class ManufacturingOrderController {
         }
 
         // 3. API Cập nhật trạng thái (Bếp trưởng bấm nút)
-        @PutMapping("/{id}/status")
+        @PatchMapping("/{id}/status")
         @PreAuthorize("hasRole('CENTRAL_KITCHEN_STAFF')")
         @Operation(summary = "Cập nhật trạng thái lệnh", description = "Dành riêng cho CENTRAL_KITCHEN_STAFF. Update status: PLANNED -> COOKING -> COMPLETED.")
         public ResponseEntity<ApiResponse<ManuOrderResponse>> updateStatus(
