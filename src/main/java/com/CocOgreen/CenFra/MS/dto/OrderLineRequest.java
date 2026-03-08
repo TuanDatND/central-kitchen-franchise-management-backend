@@ -1,6 +1,5 @@
 package com.CocOgreen.CenFra.MS.dto;
 
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -16,12 +15,7 @@ public class OrderLineRequest {
     private Integer productId;
 
     @NotNull
-    @Min(5)
+    @Min(1)
     @Max(100)
     private Integer quantity;
-
-    @AssertTrue(message = "quantity phải là bội số của 5")
-    public boolean isQuantityMultipleOfFive() {
-        return quantity == null || quantity % 5 == 0;
-    }
 }
