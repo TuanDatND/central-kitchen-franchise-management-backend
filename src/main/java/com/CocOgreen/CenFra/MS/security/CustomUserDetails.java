@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.security;
 
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,7 +42,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return Boolean.TRUE.equals(user.getIsActive());
+        return user.getStatus() == UserStatus.ACTIVE;
     }
 
     @Override public boolean isAccountNonExpired() { return true; }

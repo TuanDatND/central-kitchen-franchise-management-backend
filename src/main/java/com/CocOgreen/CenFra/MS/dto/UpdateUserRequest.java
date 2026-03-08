@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.dto;
 
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,5 +22,5 @@ public class UpdateUserRequest {
 
     private Integer storeId;
 
-    private Boolean isActive;
+    private UserStatus status;
 }

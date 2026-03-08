@@ -6,6 +6,7 @@ import com.CocOgreen.CenFra.MS.entity.Role;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.repository.RoleRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
@@ -28,17 +29,17 @@ public class AdminUserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserResponse> listUsers(Integer storeId, Boolean active, int page, int size) {
+    public Page<AdminUserResponse> listUsers(Integer storeId, UserStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "userId"));
         Page<User> users;
         if (storeId != null) {
-            users = active == null
+            users = status == null
                     ? userRepository.findByStore_StoreId(storeId, pageable)
-                    : userRepository.findByStore_StoreIdAndIsActive(storeId, active, pageable);
+                    : userRepository.findByStore_StoreIdAndStatus(storeId, status, pageable);
         } else {
-            users = active == null
+            users = status == null
                     ? userRepository.findAll(pageable)
-                    : userRepository.findByIsActive(active, pageable);
+                    : userRepository.findByStatus(status, pageable);
         }
         return users.map(this::toResponse);
     }
@@ -59,7 +60,7 @@ public class AdminUserService {
         user.setEmail(request.getEmail());
         user.setRole(role);
         user.setStore(resolveAssignableStore(role.getRoleName(), request.getStoreId()));
-        user.setIsActive(request.getIsActive() == null ? Boolean.TRUE : request.getIsActive());
+        user.setStatus(request.getStatus() == null ? UserStatus.ACTIVE : request.getStatus());
 
         return toResponse(userRepository.save(user));
     }
@@ -85,16 +86,17 @@ public class AdminUserService {
         if (request.getStoreId() != null || effectiveRole != RoleName.FRANCHISE_STORE_STAFF) {
             user.setStore(resolveAssignableStore(effectiveRole, request.getStoreId()));
         }
-        if (request.getIsActive() != null) {
-            user.setIsActive(request.getIsActive());
+        if (request.getStatus() != null) {
+            user.setStatus(request.getStatus());
         }
         return toResponse(user);
     }
 
     @Transactional
-    public void softDeleteUser(Integer userId) {
+    public AdminUserResponse softDeleteUser(Integer userId) {
         User user = findUser(userId);
-        user.setIsActive(false);
+        user.setStatus(UserStatus.INACTIVE);
+        return toResponse(user);
     }
 
     private User findUser(Integer userId) {
@@ -122,6 +124,6 @@ public class AdminUserService {
                 user.getRole().getRoleName(),
                 user.getStore() == null ? null : user.getStore().getStoreId(),
                 user.getStore() == null ? null : user.getStore().getStoreName(),
-                user.getIsActive());
+                user.getStatus());
     }
 }

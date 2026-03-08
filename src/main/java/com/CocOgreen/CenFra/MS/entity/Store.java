@@ -1,7 +1,10 @@
 package com.CocOgreen.CenFra.MS.entity;
 
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +36,7 @@ public class Store {
     @Column(name = "phone")
     private String phone;
 
-    @Column(name = "is_active")
-    private Boolean isActive;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private StoreStatus status;
 }

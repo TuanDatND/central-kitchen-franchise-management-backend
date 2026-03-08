@@ -1,7 +1,9 @@
 package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.AdminDashboardResponse;
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
 import com.CocOgreen.CenFra.MS.repository.TopStoreOrderProjection;
@@ -29,12 +31,12 @@ public class AdminDashboardService {
         int safeLimit = Math.min(Math.max(topStoresLimit, 1), 20);
 
         long totalUsers = userRepository.count();
-        long activeUsers = userRepository.countByIsActive(true);
-        long inactiveUsers = userRepository.countByIsActive(false);
+        long activeUsers = userRepository.countByStatus(UserStatus.ACTIVE);
+        long inactiveUsers = userRepository.countByStatus(UserStatus.INACTIVE);
 
         long totalStores = storeRepository.count();
-        long activeStores = storeRepository.countByIsActive(true);
-        long inactiveStores = storeRepository.countByIsActive(false);
+        long activeStores = storeRepository.countByStatus(StoreStatus.ACTIVE);
+        long inactiveStores = storeRepository.countByStatus(StoreStatus.INACTIVE);
 
         long totalOrders = storeOrderRepository.count();
         long pendingOrders = storeOrderRepository.countByStatus(StoreOrderStatus.PENDING);

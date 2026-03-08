@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,18 +11,19 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConsolidatedOrderResponse {
-    private Integer productId;
-    private Integer quantity;
-    private Instant starDate;
-    private BasicInfo basicInfo;
+    private LocalDateTime consolidatedAt;
+    private String consolidatedBy;
+    private int totalOrders;
+    private List<Integer> orderIds;
+    private List<ProductGroup> products;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class BasicInfo {
-        private LocalDateTime consolidatedAt;
-        private String consolidatedBy;
-        private int totalOrders;
+    public static class ProductGroup {
+        private Integer productId;
+        private String productName;
+        private Integer quantity;
         private List<Integer> orderIds;
     }
 }
