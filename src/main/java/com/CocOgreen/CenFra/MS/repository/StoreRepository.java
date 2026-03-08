@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.repository;
 
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,7 @@ public interface StoreRepository extends JpaRepository<Store, Integer> {
 
     boolean existsByStoreNameAndStoreIdNot(String storeName, Integer storeId);
 
-    Page<Store> findByIsActive(Boolean isActive, Pageable pageable);
+    Page<Store> findByStatus(StoreStatus status, Pageable pageable);
 
-    long countByIsActive(Boolean isActive);
+    long countByStatus(StoreStatus status);
 }

@@ -43,9 +43,17 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer>
             select distinct so
               from StoreOrder so
               join fetch so.orderDetails od
-              join fetch od.product p
+              join fetch od.product
              where so.status = :status
-               and p.productId = :productId
             """)
-    List<StoreOrder> findDistinctByStatusAndProductId(StoreOrderStatus status, Integer productId);
+    List<StoreOrder> findDistinctByStatusWithDetails(StoreOrderStatus status);
+
+    @Query("""
+            select distinct so
+              from StoreOrder so
+              join fetch so.orderDetails od
+              join fetch od.product
+             where so.orderId in :orderIds
+            """)
+    List<StoreOrder> findDistinctByOrderIdInWithDetails(List<Integer> orderIds);
 }

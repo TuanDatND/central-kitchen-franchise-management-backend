@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.dto;
 
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -20,5 +21,5 @@ public class CreateStoreRequest {
     @Size(max = 50)
     private String phone;
 
-    private Boolean isActive;
+    private StoreStatus status;
 }

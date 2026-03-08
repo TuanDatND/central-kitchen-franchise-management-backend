@@ -13,6 +13,7 @@ import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
@@ -34,7 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -62,8 +62,8 @@ public class StoreOrderService {
     @Transactional
     public StoreOrderDTO createOrder(CreateStoreOrderRequest request) {
         Authentication auth = getAuthentication();
-        Store store = resolveStoreForCreate(auth, request.getStoreId());
-        if (!Boolean.TRUE.equals(store.getIsActive())) {
+        Store store = resolveStoreForCreate(auth);
+        if (store.getStatus() != StoreStatus.ACTIVE) {
             throw new IllegalArgumentException("Store is inactive");
         }
         if (request.getDeliveryDate().isBefore(LocalDate.now())) {
@@ -157,99 +157,35 @@ public class StoreOrderService {
     }
 
     @Transactional
-    public ConsolidatedOrderResponse consolidateOrders(
-            Integer productId,
-            List<Integer> orderIds) {
-
+    public ConsolidatedOrderResponse consolidateOrdersAutomatically() {
         Authentication auth = getAuthentication();
+        validateConsolidator(auth);
 
-        if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
-            throw new AccessDeniedException("Only supply coordinator can consolidate orders");
+        List<StoreOrder> orders = storeOrderRepository.findDistinctByStatusWithDetails(StoreOrderStatus.APPROVED);
+        return consolidateEligibleOrders(orders, auth, "Cần ít nhất 2 đơn APPROVED để gom tự động");
+    }
+
+    @Transactional
+    public ConsolidatedOrderResponse consolidateOrdersManually(List<Integer> orderIds) {
+        Authentication auth = getAuthentication();
+        validateConsolidator(auth);
+
+        List<Integer> uniqueOrderIds = orderIds.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+
+        if (uniqueOrderIds.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần ít nhất 2 orderIds hợp lệ để gom thủ công");
         }
 
-        productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+        List<StoreOrder> orders = storeOrderRepository.findDistinctByOrderIdInWithDetails(uniqueOrderIds);
 
-        List<StoreOrder> orders;
-        List<Integer> consolidatedOrderIds;
-
-        if (orderIds == null || orderIds.isEmpty()) {
-            orders = storeOrderRepository.findDistinctByStatusAndProductId(StoreOrderStatus.APPROVED, productId);
-            consolidatedOrderIds = orders.stream()
-                    .map(StoreOrder::getOrderId)
-                    .distinct()
-                    .toList();
-        } else {
-            List<Integer> uniqueOrderIds = orderIds.stream()
-                    .filter(id -> id != null && id > 0)
-                    .distinct()
-                    .toList();
-
-            if (uniqueOrderIds.size() < 2) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 valid unique orderIds are required");
-            }
-
-            orders = storeOrderRepository.findAllById(uniqueOrderIds);
-
-            if (orders.size() != uniqueOrderIds.size()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more orders do not exist");
-            }
-
-            boolean hasIneligibleOrders = orders.stream()
-                    .anyMatch(order -> order.getStatus() != StoreOrderStatus.APPROVED);
-
-            if (hasIneligibleOrders) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Only APPROVED orders can be consolidated"
-                );
-            }
-
-            consolidatedOrderIds = uniqueOrderIds;
+        if (orders.size() != uniqueOrderIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Một hoặc nhiều đơn hàng không tồn tại");
         }
 
-        if (consolidatedOrderIds.size() < 2) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Cần ít nhất 2 đơn APPROVED chứa sản phẩm này để gom đơn"
-            );
-        }
-
-        int totalQuantity = 0;
-
-        for (StoreOrder order : orders) {
-            for (OrderDetail detail : order.getOrderDetails()) {
-                if (detail.getProduct().getProductId().equals(productId)) {
-                    totalQuantity += detail.getQuantity();
-                }
-            }
-        }
-
-        if (totalQuantity <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Không tìm thấy sản phẩm này trong các đơn được chọn để gom"
-            );
-        }
-
-        orders.forEach(StoreOrder::markConsolidated);
-
-        Instant suggestedStartDate = Instant.now();
-
-        ConsolidatedOrderResponse.BasicInfo basicInfo =
-                new ConsolidatedOrderResponse.BasicInfo(
-                        LocalDateTime.now(),
-                        auth.getName(),
-                        orders.size(),
-                        consolidatedOrderIds
-                );
-
-        return new ConsolidatedOrderResponse(
-                productId,
-                totalQuantity,
-                suggestedStartDate,
-                basicInfo
-        );
+        return consolidateEligibleOrders(orders, auth, "Cần ít nhất 2 đơn APPROVED để gom thủ công");
     }
 
     private StoreOrder findOrder(Integer id) {
@@ -282,6 +218,91 @@ public class StoreOrderService {
         }
     }
 
+    private void validateConsolidator(Authentication auth) {
+        if (!hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR)) {
+            throw new AccessDeniedException("Only supply coordinator can consolidate orders");
+        }
+    }
+
+    private ConsolidatedOrderResponse consolidateEligibleOrders(
+            List<StoreOrder> orders,
+            Authentication auth,
+            String minimumOrdersMessage) {
+
+        List<StoreOrder> eligibleOrders = orders.stream()
+                .filter(order -> order.getStatus() == StoreOrderStatus.APPROVED)
+                .toList();
+
+        if (eligibleOrders.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, minimumOrdersMessage);
+        }
+
+        Map<Integer, ConsolidatedAccumulator> groupedProducts = new LinkedHashMap<>();
+
+        for (StoreOrder order : eligibleOrders) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Product product = detail.getProduct();
+                ConsolidatedAccumulator accumulator = groupedProducts.computeIfAbsent(
+                        product.getProductId(),
+                        ignored -> new ConsolidatedAccumulator(
+                                product.getProductId(),
+                                product.getProductName()
+                        )
+                );
+                accumulator.add(order.getOrderId(), detail.getQuantity());
+            }
+        }
+
+        if (groupedProducts.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không có sản phẩm nào để gom");
+        }
+
+        eligibleOrders.forEach(StoreOrder::markConsolidated);
+
+        List<Integer> consolidatedOrderIds = eligibleOrders.stream()
+                .map(StoreOrder::getOrderId)
+                .distinct()
+                .toList();
+
+        List<ConsolidatedOrderResponse.ProductGroup> products = groupedProducts.values().stream()
+                .map(ConsolidatedAccumulator::toResponse)
+                .toList();
+
+        return new ConsolidatedOrderResponse(
+                LocalDateTime.now(),
+                auth.getName(),
+                consolidatedOrderIds.size(),
+                consolidatedOrderIds,
+                products
+        );
+    }
+
+    private static final class ConsolidatedAccumulator {
+        private final Integer productId;
+        private final String productName;
+        private int quantity;
+        private final Set<Integer> orderIds = new HashSet<>();
+
+        private ConsolidatedAccumulator(Integer productId, String productName) {
+            this.productId = productId;
+            this.productName = productName;
+        }
+
+        private void add(Integer orderId, Integer additionalQuantity) {
+            quantity += additionalQuantity;
+            orderIds.add(orderId);
+        }
+
+        private ConsolidatedOrderResponse.ProductGroup toResponse() {
+            return new ConsolidatedOrderResponse.ProductGroup(
+                    productId,
+                    productName,
+                    quantity,
+                    orderIds.stream().sorted().toList()
+            );
+        }
+    }
+
     private boolean hasAnyRole(Authentication auth, RoleName... roles) {
         Set<String> roleSet = Set.of(roles).stream()
                 .map(role -> ROLE_PREFIX + role.name())
@@ -294,7 +315,7 @@ public class StoreOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
     }
 
-    private Store resolveStoreForCreate(Authentication auth, Integer storeIdFromRequest) {
+    private Store resolveStoreForCreate(Authentication auth) {
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             return resolveStoreForStaff(auth.getName());
         }

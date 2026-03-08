@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.dto;
 
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,5 +29,5 @@ public class CreateUserRequest {
 
     private Integer storeId;
 
-    private Boolean isActive;
+    private UserStatus status;
 }
