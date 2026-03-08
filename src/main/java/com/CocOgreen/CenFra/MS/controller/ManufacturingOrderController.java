@@ -31,12 +31,12 @@ public class ManufacturingOrderController {
         // 1. API Tạo lệnh sản xuất (Coordinator gửi yêu cầu)
         @PostMapping
         @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-        @Operation(summary = "Tạo lệnh sản xuất mới", description = "Dành riêng cho SUPPLY_COORDINATOR. Lên kế hoạch sản xuất dự theo ID món và số lượng.")
-        public ResponseEntity<ApiResponse<ManuOrderResponse>> createOrder(
+        @Operation(summary = "Tạo lệnh sản xuất mới hàng loạt", description = "Dành riêng cho SUPPLY_COORDINATOR. Lên kế hoạch sản xuất dựa vào danh sách ID món và số lượng.")
+        public ResponseEntity<ApiResponse<List<ManuOrderResponse>>> createOrders(
                         @Valid @RequestBody ManuOrderRequest request) {
-                ManuOrderResponse response = manufacturingOrderService.createOrder(request);
+                List<ManuOrderResponse> responseList = manufacturingOrderService.createOrders(request);
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(ApiResponse.success(response, "Tạo lệnh sản xuất thành công"));
+                                .body(ApiResponse.success(responseList, "Tạo các lệnh sản xuất thành công"));
         }
 
         // 2. API Lấy danh sách lệnh (Dashboard cho Bếp)

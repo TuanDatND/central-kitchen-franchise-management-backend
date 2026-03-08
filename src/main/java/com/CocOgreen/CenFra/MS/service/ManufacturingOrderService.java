@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,49 +40,43 @@ public class ManufacturingOrderService {
     private final ManufacturingOrderMapper manufacturingOrderMapper;
 
     /**
-     * Tạo lệnh sản xuất mới.
+     * Tạo danh sách lệnh sản xuất mới (hàng loạt).
      * 
-     * @param request Dữ liệu đầu vào chứa productId và quantity (số lượng).
-     * @return ManuOrderResponse trả về lệnh vừa tạo.
+     * @param request Dữ liệu đầu vào chứa danh sách các items (productId và
+     *                quantityPlanned).
+     * @return List<ManuOrderResponse> danh sách lệnh vừa tạo.
      */
     @Transactional
-    public ManuOrderResponse createOrder(ManuOrderRequest request) {
-        // Tìm kiếm sản phẩm theo ID
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + request.getProductId()));
-
-        // Map DTO sang Entity. Các trường mặc định như PLANNED sẽ được gán trong quá
-        // trình map.
-        ManufacturingOrder order = manufacturingOrderMapper.toEntity(request);
-
-        // Gán sản phẩm
-        order.setProduct(product);
-
-        // Gán số lượng dự kiến nấu (quantityPlanned)
-        order.setQuantityPlanned(request.getQuantity());
-
-        // Tự động sinh mã lệnh sản xuất vd: MO-171500123545
-        order.setOrderCode("MO-" + System.currentTimeMillis());
-
-        // Mặc định gán trạng thái PLANNED (dù mapper đã bỏ constant nhưng để an toàn,
-        // gán thêm tại đây)
-        order.setStatus(ManuOrderStatus.PLANNED);
-
-        // Tự động gán thời gian bắt đầu
-        order.setStartDate(Instant.now());
-
-        // Lấy tên đăng nhập hiện tại từ SecurityContext và tìm User
+    public List<ManuOrderResponse> createOrders(ManuOrderRequest request) {
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUserName(currentUserName)
                 .orElseThrow(() -> new RuntimeException(
                         "Không tìm thấy người dùng hiện tại trong hệ thống: " + currentUserName));
-        order.setCreatedBy(currentUser);
 
-        // Lưu xuống DB
-        ManufacturingOrder savedOrder = manufacturingOrderRepository.save(order);
+        List<ManufacturingOrder> ordersToSave = new ArrayList<>();
 
-        // Map ngược Entity ra Response DTO
-        return manufacturingOrderMapper.toResponse(savedOrder);
+        for (ManuOrderRequest.Item item : request.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy sản phẩm với ID: " + item.getProductId()));
+
+            ManufacturingOrder order = new ManufacturingOrder();
+            order.setProduct(product);
+            order.setQuantityPlanned(item.getQuantityPlanned());
+            // Mã lệnh tự sinh để đảm bảo unique (MO-Timestamp-Random)
+            order.setOrderCode("MO-" + System.currentTimeMillis() + "-" + (int) (Math.random() * 1000));
+            order.setStatus(ManuOrderStatus.PLANNED);
+            order.setStartDate(Instant.now());
+            order.setCreatedBy(currentUser);
+
+            ordersToSave.add(order);
+        }
+
+        List<ManufacturingOrder> savedOrders = manufacturingOrderRepository.saveAll(ordersToSave);
+
+        return savedOrders.stream()
+                .map(manufacturingOrderMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     /**
