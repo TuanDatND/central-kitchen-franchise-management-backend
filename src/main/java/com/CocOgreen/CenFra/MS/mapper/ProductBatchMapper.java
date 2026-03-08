@@ -10,6 +10,6 @@ public interface ProductBatchMapper {
 
     // Entity -> Response
     @Mapping(source = "product.productName", target = "productName")
-    @Mapping(source = "product.unit", target = "unit")
+    @Mapping(source = "product.unit.unitName", target = "unit")
     ProductBatchResponse toResponse(ProductBatch batch);
 }

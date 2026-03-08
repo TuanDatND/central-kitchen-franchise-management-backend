@@ -1,43 +1,42 @@
 package com.CocOgreen.CenFra.MS.controller;
 
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.dto.response.ProductBatchResponse;
+import com.CocOgreen.CenFra.MS.enums.BatchStatus;
+import com.CocOgreen.CenFra.MS.service.ProductBatchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Controller quản lý API Lô Hàng (Product Batches).
+ * Thuộc phạm vi Backend Dev 2 (Master Data & Inbound).
+ */
 @RestController
 @RequestMapping("/api/v1/product-batches")
-@Tag(name = "Inventory Inbound", description = "APIs quản lý lô hàng nhập kho (Quang)")
+@RequiredArgsConstructor
+@Tag(name = "Production Management", description = "APIs quản lý lô hàng (Dev 2)")
 public class ProductBatchController {
 
-    @GetMapping
-    @Operation(summary = "Xem danh sách lô hàng trong kho", description = "Dùng cho Dev 3 và Frontend check tồn kho")
-    public ResponseEntity<List<Map<String, Object>>> getBatches() {
-        // MOCK DATA: Giả lập các lô hàng đang có
-        List<Map<String, Object>> mockBatches = Arrays.asList(
-                Map.of(
-                        "batchCode", "LOT-BEEF-001",
-                        "productName", "Thịt Bò Úc",
-                        "currentQuantity", 50,
-                        "expiryDate", LocalDate.now().plusDays(3),
-                        "status", "AVAILABLE"
-                ),
-                Map.of(
-                        "batchCode", "LOT-VEG-002",
-                        "productName", "Rau Cải",
-                        "currentQuantity", 20,
-                        "expiryDate", LocalDate.now().minusDays(1), // Đã hết hạn
-                        "status", "EXPIRED"
-                )
-        );
+        private final ProductBatchService productBatchService;
 
-        return ResponseEntity.ok(mockBatches);
-    }
+        // API Lấy danh sách lô hàng theo trạng thái
+        @GetMapping
+        @PreAuthorize("hasAnyRole('CENTRAL_KITCHEN_STAFF', 'MANAGER', 'SUPPLY_COORDINATOR')")
+        @Operation(summary = "Lấy danh sách lô hàng", description = "Lấy tất cả lô hàng hoặc lọc theo status (VD: WAITING_FOR_STOCK)")
+        public ResponseEntity<ApiResponse<List<ProductBatchResponse>>> getBatches(
+                        @RequestParam(required = false) BatchStatus status) {
+
+                List<ProductBatchResponse> responseList = productBatchService.getBatchesByStatus(status);
+
+                return ResponseEntity.ok(ApiResponse.success(responseList, "Lấy danh sách lô hàng thành công"));
+        }
 }

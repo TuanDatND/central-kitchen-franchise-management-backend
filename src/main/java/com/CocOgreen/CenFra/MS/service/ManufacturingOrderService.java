@@ -67,6 +67,9 @@ public class ManufacturingOrderService {
         // gán thêm tại đây)
         order.setStatus(ManuOrderStatus.PLANNED);
 
+        // Tự động gán thời gian bắt đầu
+        order.setStartDate(Instant.now());
+
         // Lấy tên đăng nhập hiện tại từ SecurityContext và tìm User
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUserName(currentUserName)

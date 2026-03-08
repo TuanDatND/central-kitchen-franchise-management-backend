@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface ExportItemMapper {
     @Mapping(target = "productId", source = "productBatch.product.productId")
     @Mapping(target = "productName", source = "productBatch.product.productName")
-    @Mapping(target = "unit", source = "productBatch.product.unit")
+    @Mapping(target = "unit", source = "productBatch.product.unit.unitName")
     @Mapping(target = "batchCode", source = "productBatch.batchCode")
     @Mapping(target = "expiryDate", source = "productBatch.expiryDate")
     ExportItemDto toDto(ExportItem entity);

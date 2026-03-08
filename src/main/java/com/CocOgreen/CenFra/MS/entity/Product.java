@@ -19,8 +19,10 @@ public class Product {
     @Column(name = "product_name", nullable = false, length = 200)
     private String productName;
 
-    @Column(name = "unit", nullable = false, length = 20)
-    private String unit;
+    // FK: unit_id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
