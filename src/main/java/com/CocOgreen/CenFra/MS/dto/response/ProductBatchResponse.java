@@ -10,11 +10,11 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class ProductBatchResponse {
     private Integer batchId;
-    private String batchCode;       // LOT-BEEF-001
+    private String batchCode; // LOT-BEEF-001
     private String productName;
     private Integer currentQuantity;// Tồn kho thực tế (Quan trọng cho Dev 3)
     private Integer initialQuantity;// Số lượng ban đầu
-    private String unit;
-    private LocalDate expiryDate;   // Hạn sử dụng (Quan trọng cho Dev 3 - FEFO)
-    private String status;          // AVAILABLE, EXPIRED...
+    private String unitName;
+    private LocalDate expiryDate; // Hạn sử dụng (Quan trọng cho Dev 3 - FEFO)
+    private String status; // AVAILABLE, EXPIRED...
 }

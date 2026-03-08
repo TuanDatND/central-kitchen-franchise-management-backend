@@ -13,6 +13,6 @@ public class OrderDetailDTO {
     private Integer orderDetailId;
     private Integer productId;
     private String productName;
-    private String unit;
+    private String unitName;
     private Integer quantity;
 }
