@@ -1,16 +1,22 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.service.ExportNoteService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +30,23 @@ public class ExportNoteController {
 
     @Operation(summary = "Lấy danh sách tất cả Phiếu xuất kho", description = "Trả về danh sách tất cả các phiếu xuất hiện có trong hệ thống.")
     @GetMapping
-    public ResponseEntity<?> getAllExportNotes() {
-        return ResponseEntity.ok(List.of(exportNoteService.findAll()));
+    public ResponseEntity<ApiResponse<?>> getAllExportNotes() {
+        List<ExportNoteDto> response = exportNoteService.findAll();
+        return ResponseEntity.ok(ApiResponse.success(response,"Trả về danh sách tất cả các phiếu xuất thành công"));
     }
 
     @Operation(summary = "Lấy danh sách Phiếu xuất kho theo code", description = "Trả về danh sách các phiếu xuất hiện có trong hệ thống theo code.")
-    @GetMapping("/{code}")
-    public ResponseEntity<?> getExportNotesByCode(@PathVariable String code) {
-        return ResponseEntity.ok(List.of(exportNoteService.findByExportCode(code)));
+    @GetMapping("/findByCode/{code:.+}")
+    public ResponseEntity<ApiResponse<?>> getExportNotesByCode(
+            @PathVariable("code") String code, 
+            Pageable pageable) {
+
+        if (code == null || code.trim().isEmpty() || code.equals("{code}")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Vui lòng nhập mã code hợp lệ (không để trống).", "INVALID_CODE"));
+        }
+
+        Page<ExportNoteDto> response = exportNoteService.findByExportCode(code, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm thành công"));
     }
 
     @Operation(summary = "Tạo Phiếu xuất kho thủ công (Manual)(!CHÚ Ý CÁI NÀY CHỈ LÀ BẢN BETA KHI NÀO LÀM XONG HẾT, RẢNH MỚI LÀM CÁI NÀY)", description = "Dành cho nhân viên kho tự chọn lô hàng cụ thể để xuất kho dựa trên Store Order.")

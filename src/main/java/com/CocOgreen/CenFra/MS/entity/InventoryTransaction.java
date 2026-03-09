@@ -38,5 +38,9 @@ public class InventoryTransaction {
     @Column(name = "transaction_date")
     private OffsetDateTime transactionDate = OffsetDateTime.now();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User user;
+
     private String note;
 }

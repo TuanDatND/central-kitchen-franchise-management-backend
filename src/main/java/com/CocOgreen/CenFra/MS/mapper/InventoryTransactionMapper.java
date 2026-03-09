@@ -10,6 +10,6 @@ public interface InventoryTransactionMapper {
     @Mapping(target = "productName", source = "productBatch.product.productName")
     @Mapping(target = "batchCode", source = "productBatch.batchCode")
     @Mapping(target = "transactionType", source = "transactionType")
-        // Lưu ý: Nếu muốn lấy tên người tạo, bạn cần join qua phiếu PN hoặc PX tương ứng
+    @Mapping(target = "createdByFullName", source = "user.fullName")
     InventoryTransactionDto toDto(InventoryTransaction entity);
 }
