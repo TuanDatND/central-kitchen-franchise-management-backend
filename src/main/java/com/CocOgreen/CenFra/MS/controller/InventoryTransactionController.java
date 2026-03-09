@@ -25,7 +25,7 @@ public class InventoryTransactionController {
 
     private final InventoryTransactionService inventoryTransactionService;
 
-    @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy danh sách lịch sử biến động có phân trang. Có thể tìm kiếm theo mã phiếu (referenceCode).")
+    @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy danh sách lịch sử biến động có phân trang.")
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getHistory(
             @PageableDefault(size = 10) Pageable pageable) {
