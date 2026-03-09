@@ -29,7 +29,7 @@ public class ExportItemController {
 
     private final ExportItemService exportItemService;
 
-    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của một Phiếu xuất cụ thể.")
+    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ .")
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getItems(Pageable pageable) {
       return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(pageable),"Lấy danh sách thành công"));
