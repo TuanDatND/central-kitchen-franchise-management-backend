@@ -1,20 +1,17 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import java.util.List;
-import java.util.Map;
-
-import com.CocOgreen.CenFra.MS.dto.ApiResponse;
-import com.CocOgreen.CenFra.MS.service.ExportItemService;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.service.ExportItemService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,10 +26,12 @@ public class ExportItemController {
 
     private final ExportItemService exportItemService;
 
-    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ .")
+    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ !! test bằng Postmain k dùng swagerUI .")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getItems(Pageable pageable) {
-      return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(pageable),"Lấy danh sách thành công"));
+    public ResponseEntity<ApiResponse<?>> getItems(
+            @RequestParam(required = false) Integer exportId,
+             Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(exportId, pageable), "Lấy danh sách thành công"));
     }
 
 }

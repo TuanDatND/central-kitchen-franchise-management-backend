@@ -1,15 +1,20 @@
 package com.CocOgreen.CenFra.MS.repository;
 
 import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+
 import com.CocOgreen.CenFra.MS.entity.ExportItem;
 
 public interface ExportItemRepository extends JpaRepository<ExportItem, Integer> {
     @Override
     Page<ExportItem> findAll(Pageable pageable);
+
+    // Lấy danh sách item theo id của phiếu xuất
+    Page<ExportItem> findByExportNote_ExportId(Integer exportId, Pageable pageable);
 
     // Báo cáo top món tiêu thụ mạnh nhất
     @Query("SELECT new com.CocOgreen.CenFra.MS.dto.response.TopProductResponse(" +
