@@ -1,7 +1,7 @@
 package com.CocOgreen.CenFra.MS.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.CocOgreen.CenFra.MS.dto.ExportItemDto;
@@ -17,13 +17,13 @@ public class ExportItemService {
     private final ExportItemRepository exportItemRepository;
     private  final ExportItemMapper exportItemMapper;
 
-    public Page<ExportItemDto> findAll(Integer exportId, Pageable pageable) {
-        Page<ExportItem> exportItems;
+    public List<ExportItemDto> findAll(Integer exportId) {
+        List<ExportItem> exportItems;
         if (exportId != null) {
-            exportItems = exportItemRepository.findByExportNote_ExportId(exportId, pageable);
+            exportItems = exportItemRepository.findByExportNote_ExportId(exportId);
         } else {
-            exportItems = exportItemRepository.findAll(pageable);
+            exportItems = exportItemRepository.findAll();
         }
-        return exportItems.map(exportItemMapper::toDto);
+        return exportItems.stream().map(exportItemMapper::toDto).toList();
     }
 }

@@ -1,8 +1,5 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,9 +26,8 @@ public class ExportItemController {
     @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ !! test bằng Postmain k dùng swagerUI .")
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getItems(
-            @RequestParam(required = false) Integer exportId,
-             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(exportId, pageable), "Lấy danh sách thành công"));
+            @RequestParam(required = false) Integer exportId) {
+        return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(exportId), "Lấy danh sách thành công"));
     }
 
 }

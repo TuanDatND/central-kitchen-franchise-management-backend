@@ -14,7 +14,7 @@ public interface ExportItemRepository extends JpaRepository<ExportItem, Integer>
     Page<ExportItem> findAll(Pageable pageable);
 
     // Lấy danh sách item theo id của phiếu xuất
-    Page<ExportItem> findByExportNote_ExportId(Integer exportId, Pageable pageable);
+    List<ExportItem> findByExportNote_ExportId(Integer exportId);
 
     // Báo cáo top món tiêu thụ mạnh nhất
     @Query("SELECT new com.CocOgreen.CenFra.MS.dto.response.TopProductResponse(" +
