@@ -52,10 +52,10 @@ public class ExportNoteService {
     }
 
     @Transactional
-    public ExportNote updateStatusExportNote(Integer id, ExportStatus status) {
+    public void updateStatusExportNote(Integer id, ExportStatus status) {
         ExportNote exportNote = exportNoteRepositoty.findById(id).get();
         exportNote.setStatus(status);
-        return exportNoteRepositoty.save(exportNote);
+        exportNoteRepositoty.save(exportNote);
     }
 
     @Transactional

@@ -1,12 +1,16 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import java.util.List;
-import java.util.Map;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.service.InventoryTransactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,15 +19,32 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/inventory-transactions")
+@PreAuthorize("hasRole('MANAGER')") 
 @Tag(name = "Dev 3 - Inventory Transaction API", description = "Lịch sử biến động hàng hóa (Sổ cái kho - Immutable Log)")
 public class InventoryTransactionController {
-    @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy lịch sử mọi biến động Nhập / Xuất / Hủy của toàn bộ lô hàng.")
+
+    private final InventoryTransactionService inventoryTransactionService;
+
+    @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy danh sách lịch sử biến động có phân trang. Có thể tìm kiếm theo mã phiếu (referenceCode).")
     @GetMapping
-    public ResponseEntity<?> getHistory() {
-        return ResponseEntity.ok(List.of(
-                Map.of("id", 101, "type", "EXPORT", "product", "Thịt Bò Mỹ", "qty", -25, "ref", "PX-001", "time", "2024-02-10 14:30"),
-                Map.of("id", 102, "type", "IMPORT", "product", "Bánh Mì", "qty", 100, "ref", "PN-052", "time", "2024-02-10 09:00"),
-                Map.of("id", 103, "type", "DISPOSAL", "product", "Sữa tươi", "qty", -5, "ref", "HUY-001", "time", "2024-02-10 16:00")
+    public ResponseEntity<ApiResponse<?>> getHistory(
+            @PageableDefault(size = 10) Pageable pageable) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                inventoryTransactionService.findAll(pageable), 
+                "Lấy danh sách lịch sử biến động thành công"
+        ));
+    }
+
+    @Operation(summary = "Tìm Kiếm Sổ Cái Kho (Transaction Log)", description = "Lấy lịch sử biến động Nhập / Xuất / Hủy của toàn bộ lô hàng theo mã tham chiếu.")
+    @GetMapping("/getHistoryByCode/{referenceCode:.+}")
+    public ResponseEntity<ApiResponse<?>> getHistoryByCode(
+            @PathVariable String referenceCode,  
+            @PageableDefault(size = 10) Pageable pageable) {
+            
+        return ResponseEntity.ok(ApiResponse.success(
+                inventoryTransactionService.findByReferenceCode(referenceCode, pageable), 
+                "Tìm kiếm thành công"
         ));
     }
 }
