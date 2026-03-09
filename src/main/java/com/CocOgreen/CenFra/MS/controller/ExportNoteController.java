@@ -3,14 +3,7 @@ package com.CocOgreen.CenFra.MS.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
@@ -33,6 +26,12 @@ public class ExportNoteController {
     @GetMapping
     public ResponseEntity<?> getAllExportNotes() {
         return ResponseEntity.ok(List.of(exportNoteService.findAll()));
+    }
+
+    @Operation(summary = "Lấy danh sách Phiếu xuất kho theo code", description = "Trả về danh sách các phiếu xuất hiện có trong hệ thống theo code.")
+    @GetMapping("/{code}")
+    public ResponseEntity<?> getExportNotesByCode(@PathVariable String code) {
+        return ResponseEntity.ok(List.of(exportNoteService.findByExportCode(code)));
     }
 
     @Operation(summary = "Tạo Phiếu xuất kho thủ công (Manual)(!CHÚ Ý CÁI NÀY CHỈ LÀ BẢN BETA KHI NÀO LÀM XONG HẾT, RẢNH MỚI LÀM CÁI NÀY)", description = "Dành cho nhân viên kho tự chọn lô hàng cụ thể để xuất kho dựa trên Store Order.")
