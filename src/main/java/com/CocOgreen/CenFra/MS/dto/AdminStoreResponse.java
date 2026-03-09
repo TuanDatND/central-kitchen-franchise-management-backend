@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.dto;
 
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,5 +13,5 @@ public class AdminStoreResponse {
     private String storeName;
     private String address;
     private String phone;
-    private Boolean isActive;
+    private StoreStatus status;
 }

@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.dto;
 
 import com.CocOgreen.CenFra.MS.enums.RoleName;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,5 +19,5 @@ public class AdminUserResponse {
     private RoleName role;
     private Integer storeId;
     private String storeName;
-    private Boolean isActive;
+    private UserStatus status;
 }

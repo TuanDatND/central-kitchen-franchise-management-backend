@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.entity;
 
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,7 +45,8 @@ public class User {
     @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<ExportNote> exportNotes;
 
-    @Column(nullable = false)
-    private Boolean isActive;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status;
 
 }

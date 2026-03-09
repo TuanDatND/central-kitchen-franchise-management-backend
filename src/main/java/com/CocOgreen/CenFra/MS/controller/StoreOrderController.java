@@ -97,19 +97,27 @@ public class StoreOrderController {
         return ResponseEntity.ok(ApiResponse.success(service.cancelOrder(id, request), "Hủy đơn thành công"));
     }
 
-    @PostMapping("/consolidate")
+    @PostMapping("/consolidate/auto")
     @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-    @Operation(summary = "Gom đơn theo sản phẩm", description = "SUPPLY_COORDINATOR chỉ cần truyền productId để hệ thống tự gom các đơn APPROVED có chứa sản phẩm đó. Sau khi gom thành công, trạng thái đơn sẽ chuyển sang CONSOLIDATED và không thể gom lại. Có thể truyền thêm orderIds nếu muốn gom thủ công theo danh sách cụ thể.")
-    public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidate(
-            @Valid @RequestBody ConsolidateOrdersRequest request) {
-
+    @Operation(summary = "Gom đơn tự động", description = "SUPPLY_COORDINATOR bấm một nút để hệ thống tự lấy tất cả đơn APPROVED và gom theo từng sản phẩm. Sau khi gom thành công, các đơn tham gia sẽ chuyển sang CONSOLIDATED.")
+    public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidateAutomatically() {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        service.consolidateOrders(
-                                request.getProductId(),
-                                request.getOrderIds()
-                        ),
-                        "Gom đơn thành công"
+                        service.consolidateOrdersAutomatically(),
+                        "Gom đơn tự động thành công"
+                )
+        );
+    }
+
+    @PostMapping("/consolidate/manual")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
+    @Operation(summary = "Gom đơn thủ công", description = "SUPPLY_COORDINATOR chọn danh sách orderIds, hệ thống tự nhóm các đơn đó theo sản phẩm rồi chuyển các đơn tham gia sang CONSOLIDATED.")
+    public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidateManually(
+            @Valid @RequestBody ConsolidateOrdersRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        service.consolidateOrdersManually(request.getOrderIds()),
+                        "Gom đơn thủ công thành công"
                 )
         );
     }

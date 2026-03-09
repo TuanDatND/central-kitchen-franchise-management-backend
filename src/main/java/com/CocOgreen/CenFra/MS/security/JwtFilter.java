@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.security;
 
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -69,7 +70,7 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             User user = userRepository.findByUserName(username).orElse(null);
-            if (user == null || !Boolean.TRUE.equals(user.getIsActive()) || user.getRole() == null) {
+            if (user == null || user.getStatus() != UserStatus.ACTIVE || user.getRole() == null) {
                 filterChain.doFilter(request, response);
                 return;
             }

@@ -5,6 +5,7 @@ import com.CocOgreen.CenFra.MS.dto.LoginResponse;
 import com.CocOgreen.CenFra.MS.dto.RefreshRequest;
 import com.CocOgreen.CenFra.MS.entity.RefreshToken;
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.enums.UserStatus;
 import com.CocOgreen.CenFra.MS.repository.RefreshTokenRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import com.CocOgreen.CenFra.MS.security.CustomUserDetails;
@@ -79,7 +80,7 @@ public class AuthService {
         User user = userRepository.findByUserName(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        if (!Boolean.TRUE.equals(user.getIsActive())) {
+        if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is inactive");
         }
         if (!storedToken.getUser().getUserId().equals(user.getUserId())) {

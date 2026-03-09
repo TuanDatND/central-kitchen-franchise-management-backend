@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.dto;
 
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import lombok.*;
 
 @AllArgsConstructor
@@ -10,5 +11,5 @@ public class StoreDTO {
     private String storeName;
     private String address;
     private String phone;
-    private Boolean isActive;
+    private StoreStatus status;
 }

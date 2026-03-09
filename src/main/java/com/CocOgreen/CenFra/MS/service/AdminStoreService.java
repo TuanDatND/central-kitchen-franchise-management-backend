@@ -4,6 +4,7 @@ import com.CocOgreen.CenFra.MS.dto.AdminStoreResponse;
 import com.CocOgreen.CenFra.MS.dto.CreateStoreRequest;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreRequest;
 import com.CocOgreen.CenFra.MS.entity.Store;
+import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,11 @@ public class AdminStoreService {
     private final StoreRepository storeRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminStoreResponse> listStores(Boolean active, int page, int size) {
+    public Page<AdminStoreResponse> listStores(StoreStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "storeId"));
-        Page<Store> stores = active == null
+        Page<Store> stores = status == null
                 ? storeRepository.findAll(pageable)
-                : storeRepository.findByIsActive(active, pageable);
+                : storeRepository.findByStatus(status, pageable);
         return stores.map(this::toResponse);
     }
 
@@ -44,7 +45,7 @@ public class AdminStoreService {
         store.setStoreName(normalizedStoreName);
         store.setAddress(request.getAddress());
         store.setPhone(request.getPhone());
-        store.setIsActive(request.getIsActive() == null ? Boolean.TRUE : request.getIsActive());
+        store.setStatus(request.getStatus() == null ? StoreStatus.ACTIVE : request.getStatus());
 
         return toResponse(storeRepository.save(store));
     }
@@ -66,8 +67,8 @@ public class AdminStoreService {
         if (request.getPhone() != null) {
             store.setPhone(request.getPhone());
         }
-        if (request.getIsActive() != null) {
-            store.setIsActive(request.getIsActive());
+        if (request.getStatus() != null) {
+            store.setStatus(request.getStatus());
         }
         return toResponse(store);
     }
@@ -75,7 +76,7 @@ public class AdminStoreService {
     @Transactional
     public AdminStoreResponse softDeleteStore(Integer storeId) {
         Store store = findStore(storeId);
-        store.setIsActive(false);
+        store.setStatus(StoreStatus.INACTIVE);
         return toResponse(store);
     }
 
@@ -90,6 +91,6 @@ public class AdminStoreService {
                 store.getStoreName(),
                 store.getAddress(),
                 store.getPhone(),
-                store.getIsActive());
+                store.getStatus());
     }
 }

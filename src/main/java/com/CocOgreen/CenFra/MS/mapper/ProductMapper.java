@@ -11,8 +11,10 @@ import org.mapstruct.MappingTarget;
 public interface ProductMapper {
 
     // 1. Entity -> Response
-    // Lấy tên Category từ đối tượng Category lồng bên trong
+    // Lấy tên Category và Unit
     @Mapping(source = "category.categoryName", target = "categoryName")
+    @Mapping(source = "unit.unitId", target = "unitId")
+    @Mapping(source = "unit.unitName", target = "unitName")
     ProductResponse toResponse(Product product);
 
     // 2. Request -> Entity
@@ -21,11 +23,13 @@ public interface ProductMapper {
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "status", ignore = true) // Mặc định set ACTIVE ở Service
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "unit", ignore = true)
     Product toEntity(ProductRequest request);
 
     // 3. Update Entity từ Request
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "unit", ignore = true)
     void updateProduct(@MappingTarget Product product, ProductRequest request);
 }

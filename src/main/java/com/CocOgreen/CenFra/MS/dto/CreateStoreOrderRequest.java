@@ -15,8 +15,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateStoreOrderRequest {
-    private Integer storeId;
-
     @NotNull
     @FutureOrPresent
     private LocalDate deliveryDate;
