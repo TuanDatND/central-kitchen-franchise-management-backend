@@ -38,5 +38,21 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Inte
             "ORDER BY e.expiryDate ASC")
     List<ProductBatch> findAvailableProducts(@Param("product") Product product,
                                            @Param("quantity") Integer quantity);
+
+    // --- Báo cáo tổng tồn kho nhóm theo sản phẩm ---
+    @Query("SELECT new com.CocOgreen.CenFra.MS.dto.response.StockSummaryResponse(" +
+           "b.product.productName, b.product.unit.unitName, CAST(SUM(b.currentQuantity) AS long)) " +
+           "FROM ProductBatch b " +
+            "WHERE b.status = 'AVAILABLE'"+
+           "GROUP BY b.product.productName, b.product.unit.unitName")
+    List<com.CocOgreen.CenFra.MS.dto.response.StockSummaryResponse> findStockSummary();
+
+    // --- Báo cáo cảnh báo lô hàng sắp hết hạn ---
+    @Query("SELECT new com.CocOgreen.CenFra.MS.dto.response.NearExpiryBatchResponse(" +
+           "b.batchCode, b.product.productName, b.expiryDate, b.currentQuantity) " +
+           "FROM ProductBatch b " +
+           "WHERE b.status = 'AVAILABLE' AND b.expiryDate <= :targetDate " +
+           "ORDER BY b.expiryDate ASC")
+    List<com.CocOgreen.CenFra.MS.dto.response.NearExpiryBatchResponse> findNearExpiryBatches(@Param("targetDate") java.time.LocalDate targetDate);
 }
 

@@ -1,37 +1,66 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import java.util.List;
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.dto.response.NearExpiryBatchResponse;
+import com.CocOgreen.CenFra.MS.dto.response.StockSummaryResponse;
+import com.CocOgreen.CenFra.MS.dto.response.TopProductResponse;
+import com.CocOgreen.CenFra.MS.dto.response.TopStoreResponse;
+import com.CocOgreen.CenFra.MS.service.InventoryReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/inventory-reports")
-@Tag(name = "Dev 3 - Inventory Report API", description = "Báo cáo Tồn Kho & Cảnh báo hạn sử dụng lô hàng")
+@RequiredArgsConstructor
+@Tag(name = "Dev 3 - Inventory Report API", description = "Báo cáo Tồn Kho & Cảnh báo hạn sử dụng lô hàng & Thống kê")
 public class InventoryReportController {
-    // Danh sách các lô hàng sắp hết hạn (Cần ưu tiên xuất trước)
-    @Operation(summary = "Báo cáo lô hàng sắp hết hạn", description = "Danh sách các lô hàng sắp đến hạn sử dụng cần ưu tiên luân chuyển hoặc tiêu hủy (Hỗ trợ chiến lược FEFO).")
+
+    private final InventoryReportService inventoryReportService;
+
+    // Danh sách các lô hàng sắp hết hạn
+    @Operation(summary = "Báo cáo lô hàng sắp hết hạn", description = "Danh sách lô sắp đến hạn sử dụng cần ưu tiên (FEFO). Quyền: MANAGER, SUPPLY_COORDINATOR")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPPLY_COORDINATOR')")
     @GetMapping("/near-expiry")
-    public ResponseEntity<?> getNearExpiry() {
-        return ResponseEntity.ok(List.of(
-                Map.of("batchCode", "LOT-MILK-11", "product", "Sữa tươi", "expiryDate", "2024-02-15", "stock", 5),
-                Map.of("batchCode", "LOT-EGG-02", "product", "Trứng gà", "expiryDate", "2024-02-12", "stock", 50)
-        ));
+    public ResponseEntity<ApiResponse<List<NearExpiryBatchResponse>>> getNearExpiry(
+            @RequestParam(defaultValue = "14") int daysThreshold) {
+        List<NearExpiryBatchResponse> data = inventoryReportService.getNearExpiryBatches(daysThreshold);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách lô hàng sắp hết hạn thành công"));
     }
 
-    // Báo cáo tổng tồn kho theo từng sản phẩm (gộp tất cả các lô)
-    @Operation(summary = "Báo cáo tổng tồn kho", description = "Tính tổng số lượng tồn kho của từng sản phẩm hiện có trong kho trung tâm (gộp từ tất cả các lô).")
+    // Báo cáo tổng tồn kho
+    @Operation(summary = "Báo cáo tổng tồn kho", description = "Tính tổng số lượng tồn kho theo sản phẩm. Quyền: MANAGER, SUPPLY_COORDINATOR, CENTRAL_KITCHEN_STAFF")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPPLY_COORDINATOR', 'CENTRAL_KITCHEN_STAFF')")
     @GetMapping("/stock-summary")
-    public ResponseEntity<?> getStockSummary() {
-        return ResponseEntity.ok(List.of(
-                Map.of("product", "Thịt Bò Mỹ", "totalStock", 150, "unit", "kg"),
-                Map.of("product", "Sốt BBQ", "totalStock", 45, "unit", "hũ")
-        ));
+    public ResponseEntity<ApiResponse<List<StockSummaryResponse>>> getStockSummary() {
+        List<StockSummaryResponse> data = inventoryReportService.getStockSummary();
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy báo cáo tổng tồn kho thành công"));
+    }
+
+    // Top món tiêu thụ mạnh nhất
+    @Operation(summary = "Top món tiêu thụ mạnh nhất", description = "Thống kê sản phẩm được xuất kho nhiều nhất. Quyền: MANAGER, ADMIN")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @GetMapping("/top-consumed")
+    public ResponseEntity<ApiResponse<List<TopProductResponse>>> getTopConsumedProducts(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<TopProductResponse> data = inventoryReportService.getTopConsumedProducts(limit);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách top món tiêu thụ thành công"));
+    }
+
+    // Top cửa hàng nhập lớn nhất
+    @Operation(summary = "Top cửa hàng nhập lớn nhất", description = "Thống kê cửa hàng đã nhập nhiều hàng nhất. Quyền: MANAGER, ADMIN")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @GetMapping("/top-importing-stores")
+    public ResponseEntity<ApiResponse<List<TopStoreResponse>>> getTopImportingStores(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<TopStoreResponse> data = inventoryReportService.getTopImportingStores(limit);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách top cửa hàng nhập lớn nhất thành công"));
     }
 }
