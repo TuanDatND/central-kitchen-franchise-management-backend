@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.dto.ExportItemDto;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.service.ExportItemService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,9 +27,10 @@ public class ExportItemController {
 
     @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ !! test bằng Postmain k dùng swagerUI .")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getItems(
-            @RequestParam(required = false) Integer exportId) {
-        return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(exportId), "Lấy danh sách thành công"));
+    public ResponseEntity<ApiResponse<PagedData<ExportItemDto>>> getItems(
+            @RequestParam(required = false) Integer exportId,
+            @org.springframework.data.web.PageableDefault(size = 10) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(exportItemService.findAll(exportId, pageable), "Lấy danh sách thành công"));
     }
 
 }
