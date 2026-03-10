@@ -38,7 +38,7 @@ public class InventoryReportService {
     @Transactional(readOnly = true)
     public PagedData<StockSummaryResponse> getStockSummary() {
         // Lấy tất cả các lô hàng đang AVAILABLE
-        List<com.CocOgreen.CenFra.MS.entity.ProductBatch> availableBatches = productBatchRepository.findByStatus(com.CocOgreen.CenFra.MS.enums.BatchStatus.AVAILABLE);
+        List<ProductBatch> availableBatches = productBatchRepository.findByStatus(com.CocOgreen.CenFra.MS.enums.BatchStatus.AVAILABLE);
 
         // Gom nhóm theo Product
         Map<Product, List<ProductBatch>> grouped = availableBatches.stream()
@@ -73,7 +73,7 @@ public class InventoryReportService {
                     long days = java.time.temporal.ChronoUnit.DAYS.between(now, batch.getExpiryDate());
                     if (days < 0) {
                         expiredCount++;
-                    } else if (days <= 14) {
+                    } else if (days <= 7) {
                         nearExpiryCount++;
                     }
                 }
