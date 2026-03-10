@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
 import com.CocOgreen.CenFra.MS.entity.ExportItem;
 import com.CocOgreen.CenFra.MS.entity.ExportNote;
@@ -35,14 +36,17 @@ public class ExportNoteService {
     private final StoreOrderRepository storeOrderRepository;
     private final InventoryTransactionService auditService;
 
-    public List<ExportNoteDto> findAll() {
-        return exportNoteRepositoty.findAll().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
+    public PagedData<ExportNoteDto> findAll(Pageable pageable) {
+        Page<ExportNote> page = exportNoteRepositoty.findAll(pageable);
+        List<ExportNoteDto> dtoList = page.getContent().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
+        return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 
-    public Page<ExportNoteDto> findByExportCode(String exportCode, Pageable pageable) {
+    public PagedData<ExportNoteDto> findByExportCode(String exportCode, Pageable pageable) {
         String searchKeyword = (exportCode != null) ? exportCode.trim() : "";
-        Page<ExportNote> note = exportNoteRepositoty.searchByExportCode(searchKeyword, pageable);
-        return note.map(exportNoteMapper::toDto);
+        Page<ExportNote> page = exportNoteRepositoty.searchByExportCode(searchKeyword, pageable);
+        List<ExportNoteDto> dtoList = page.getContent().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
+        return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 
     public ExportNoteDto findById(Integer id) {

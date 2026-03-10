@@ -1,6 +1,6 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import java.util.List;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,9 +29,9 @@ public class InventoryReportController {
     @Operation(summary = "Báo cáo lô hàng sắp hết hạn", description = "Danh sách lô sắp đến hạn sử dụng cần ưu tiên (FEFO). Quyền: MANAGER, SUPPLY_COORDINATOR")
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPPLY_COORDINATOR')")
     @GetMapping("/near-expiry")
-    public ResponseEntity<ApiResponse<List<NearExpiryBatchResponse>>> getNearExpiry(
+    public ResponseEntity<ApiResponse<PagedData<NearExpiryBatchResponse>>> getNearExpiry(
             @RequestParam(defaultValue = "14") int daysThreshold) {
-        List<NearExpiryBatchResponse> data = inventoryReportService.getNearExpiryBatches(daysThreshold);
+        PagedData<NearExpiryBatchResponse> data = inventoryReportService.getNearExpiryBatches(daysThreshold);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách lô hàng sắp hết hạn thành công"));
     }
 
@@ -39,8 +39,8 @@ public class InventoryReportController {
     @Operation(summary = "Báo cáo tổng tồn kho", description = "Tính tổng số lượng tồn kho theo sản phẩm. Quyền: MANAGER, SUPPLY_COORDINATOR, CENTRAL_KITCHEN_STAFF")
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPPLY_COORDINATOR', 'CENTRAL_KITCHEN_STAFF')")
     @GetMapping("/stock-summary")
-    public ResponseEntity<ApiResponse<List<StockSummaryResponse>>> getStockSummary() {
-        List<StockSummaryResponse> data = inventoryReportService.getStockSummary();
+    public ResponseEntity<ApiResponse<PagedData<StockSummaryResponse>>> getStockSummary() {
+        PagedData<StockSummaryResponse> data = inventoryReportService.getStockSummary();
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy báo cáo tổng tồn kho thành công"));
     }
 
@@ -48,9 +48,9 @@ public class InventoryReportController {
     @Operation(summary = "Top món tiêu thụ mạnh nhất", description = "Thống kê sản phẩm được xuất kho nhiều nhất. Quyền: MANAGER, ADMIN")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     @GetMapping("/top-consumed")
-    public ResponseEntity<ApiResponse<List<TopProductResponse>>> getTopConsumedProducts(
+    public ResponseEntity<ApiResponse<PagedData<TopProductResponse>>> getTopConsumedProducts(
             @RequestParam(defaultValue = "10") int limit) {
-        List<TopProductResponse> data = inventoryReportService.getTopConsumedProducts(limit);
+        PagedData<TopProductResponse> data = inventoryReportService.getTopConsumedProducts(limit);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách top món tiêu thụ thành công"));
     }
 
@@ -58,9 +58,9 @@ public class InventoryReportController {
     @Operation(summary = "Top cửa hàng nhập lớn nhất", description = "Thống kê cửa hàng đã nhập nhiều hàng nhất. Quyền: MANAGER, ADMIN")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     @GetMapping("/top-importing-stores")
-    public ResponseEntity<ApiResponse<List<TopStoreResponse>>> getTopImportingStores(
+    public ResponseEntity<ApiResponse<PagedData<TopStoreResponse>>> getTopImportingStores(
             @RequestParam(defaultValue = "10") int limit) {
-        List<TopStoreResponse> data = inventoryReportService.getTopImportingStores(limit);
+        PagedData<TopStoreResponse> data = inventoryReportService.getTopImportingStores(limit);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách top cửa hàng nhập lớn nhất thành công"));
     }
 }

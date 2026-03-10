@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.response.NearExpiryBatchResponse;
 import com.CocOgreen.CenFra.MS.dto.response.StockSummaryResponse;
 import com.CocOgreen.CenFra.MS.dto.response.TopProductResponse;
@@ -28,8 +29,9 @@ public class InventoryReportService {
      * Quyền: MANAGER, SUPPLY_COORDINATOR, CENTRAL_KITCHEN_STAFF
      */
     @Transactional(readOnly = true)
-    public List<StockSummaryResponse> getStockSummary() {
-        return productBatchRepository.findStockSummary();
+    public PagedData<StockSummaryResponse> getStockSummary() {
+        List<StockSummaryResponse> list = productBatchRepository.findStockSummary();
+        return new PagedData<>(list, 0, Math.max(list.size(), 1), list.size(), 1, true, true);
     }
 
     /**
@@ -38,9 +40,10 @@ public class InventoryReportService {
      * Mặc định lấy các lô hàng sẽ hết hạn trong vòng `daysThreshold` ngày tới.
      */
     @Transactional(readOnly = true)
-    public List<NearExpiryBatchResponse> getNearExpiryBatches(int daysThreshold) {
+    public PagedData<NearExpiryBatchResponse> getNearExpiryBatches(int daysThreshold) {
         LocalDate targetDate = LocalDate.now().plusDays(daysThreshold);
-        return productBatchRepository.findNearExpiryBatches(targetDate);
+        List<NearExpiryBatchResponse> list = productBatchRepository.findNearExpiryBatches(targetDate);
+        return new PagedData<>(list, 0, Math.max(list.size(), 1), list.size(), 1, true, true);
     }
 
     /**
@@ -48,8 +51,9 @@ public class InventoryReportService {
      * Quyền: MANAGER, ADMIN
      */
     @Transactional(readOnly = true)
-    public List<TopProductResponse> getTopConsumedProducts(int limit) {
-        return exportItemRepository.findTopConsumedProducts(PageRequest.of(0, limit));
+    public PagedData<TopProductResponse> getTopConsumedProducts(int limit) {
+        List<TopProductResponse> list = exportItemRepository.findTopConsumedProducts(PageRequest.of(0, limit));
+        return new PagedData<>(list, 0, limit, list.size(), 1, true, true);
     }
 
     /**
@@ -57,7 +61,8 @@ public class InventoryReportService {
      * Quyền: MANAGER, ADMIN
      */
     @Transactional(readOnly = true)
-    public List<TopStoreResponse> getTopImportingStores(int limit) {
-        return exportItemRepository.findTopImportingStores(PageRequest.of(0, limit));
+    public PagedData<TopStoreResponse> getTopImportingStores(int limit) {
+        List<TopStoreResponse> list = exportItemRepository.findTopImportingStores(PageRequest.of(0, limit));
+        return new PagedData<>(list, 0, limit, list.size(), 1, true, true);
     }
 }

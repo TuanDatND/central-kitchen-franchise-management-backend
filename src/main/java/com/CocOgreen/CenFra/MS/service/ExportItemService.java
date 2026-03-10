@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.CocOgreen.CenFra.MS.dto.ExportItemDto;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.entity.ExportItem;
 import com.CocOgreen.CenFra.MS.mapper.ExportItemMapper;
 import com.CocOgreen.CenFra.MS.repository.ExportItemRepository;
@@ -17,13 +18,14 @@ public class ExportItemService {
     private final ExportItemRepository exportItemRepository;
     private  final ExportItemMapper exportItemMapper;
 
-    public List<ExportItemDto> findAll(Integer exportId) {
-        List<ExportItem> exportItems;
+    public PagedData<ExportItemDto> findAll(Integer exportId, org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<ExportItem> page;
         if (exportId != null) {
-            exportItems = exportItemRepository.findByExportNote_ExportId(exportId);
+            page = exportItemRepository.findByExportNote_ExportId(exportId, pageable);
         } else {
-            exportItems = exportItemRepository.findAll();
+            page = exportItemRepository.findAll(pageable);
         }
-        return exportItems.stream().map(exportItemMapper::toDto).toList();
+        List<ExportItemDto> dtoList = page.getContent().stream().map(exportItemMapper::toDto).toList();
+        return new com.CocOgreen.CenFra.MS.dto.PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 }

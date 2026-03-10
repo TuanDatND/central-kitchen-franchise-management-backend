@@ -1,17 +1,21 @@
 package com.CocOgreen.CenFra.MS.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.CocOgreen.CenFra.MS.dto.InventoryTransactionDto;
-import com.CocOgreen.CenFra.MS.entity.ExportItem;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.entity.InventoryTransaction;
 import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import com.CocOgreen.CenFra.MS.mapper.InventoryTransactionMapper;
 import com.CocOgreen.CenFra.MS.repository.InventoryTransactionRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,13 +40,16 @@ public class InventoryTransactionService {
         inventoryTransactionRepository.save(tx);
     }
 
-    public Page<InventoryTransactionDto> findByReferenceCode(String code, Pageable pageable) {
+    public PagedData<InventoryTransactionDto> findByReferenceCode(String code, Pageable pageable) {
         String fCode = (code != null) ? code.trim() : "";
-        return inventoryTransactionRepository.findByReferenceCodeContaining(fCode, pageable).map(inventoryTransactionMapper::toDto);
+        Page<InventoryTransaction> page = inventoryTransactionRepository.findByReferenceCodeContaining(fCode, pageable);
+        List<InventoryTransactionDto> dtoList = page.getContent().stream().map(inventoryTransactionMapper::toDto).collect(Collectors.toList());
+        return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 
-    public Page<InventoryTransactionDto> findAll(Pageable pageable) {
-        return inventoryTransactionRepository.findAll(pageable).map(inventoryTransactionMapper::toDto);
+    public PagedData<InventoryTransactionDto> findAll(Pageable pageable) {
+        Page<InventoryTransaction> page = inventoryTransactionRepository.findAll(pageable);
+        List<InventoryTransactionDto> dtoList = page.getContent().stream().map(inventoryTransactionMapper::toDto).collect(Collectors.toList());
+        return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
-
 }
