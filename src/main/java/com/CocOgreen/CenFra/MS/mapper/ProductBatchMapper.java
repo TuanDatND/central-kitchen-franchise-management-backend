@@ -9,9 +9,7 @@ import org.mapstruct.Mapping;
 public interface ProductBatchMapper {
 
     // Entity -> Response
-    @Mapping(source = "product.productId", target = "productId")
     @Mapping(source = "product.productName", target = "productName")
-    @Mapping(source = "manufacturingOrder.manuOrderId", target = "manuOrderId")
-    @Mapping(source = "manufacturingOrder.orderCode", target = "manuOrderCode")
+    @Mapping(source = "product.unit.unitName", target = "unitName")
     ProductBatchResponse toResponse(ProductBatch batch);
 }
