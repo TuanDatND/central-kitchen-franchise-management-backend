@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/inventory-transactions")
-@PreAuthorize("hasRole('MANAGER')") 
 @Tag(name = "Dev 3 - Inventory Transaction API", description = "Lịch sử biến động hàng hóa (Sổ cái kho - Immutable Log)")
 public class InventoryTransactionController {
 
