@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.CocOgreen.CenFra.MS.enums.InventoryStockStatus;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('MANAGER','CENTRAL_KITCHEN_STAFF')")
 public class InventoryReportService {
 
     private final ProductBatchRepository productBatchRepository;
@@ -80,12 +83,16 @@ public class InventoryReportService {
             }
 
             String warning = "Bình thường";
+            InventoryStockStatus status = InventoryStockStatus.AVAILABLE;
             if (expiredCount > 0 && nearExpiryCount > 0) {
                 warning = "Có " + expiredCount + " lô đã hết hạn, " + nearExpiryCount + " lô sắp hết hạn";
+                status = InventoryStockStatus.WARNING;
             } else if (expiredCount > 0) {
                 warning = "Có " + expiredCount + " lô đã hết hạn";
+                status = InventoryStockStatus.EXPIRED;
             } else if (nearExpiryCount > 0) {
                 warning = "Có " + nearExpiryCount + " lô sắp hết hạn";
+                status = InventoryStockStatus.EXPIRING_SOON;
             }
 
             // Map danh sách lô hàng sang ProductBatchResponse
@@ -111,13 +118,12 @@ public class InventoryReportService {
             response.setTotalStock(totalStock);
             response.setWarning(warning);
             response.setProductBatch(batchResponses);
-
+            response.setStatus(status);
             list.add(response);
         }
 
         // Sắp xếp danh sách tổng hợp theo tên sản phẩm
         list.sort(Comparator.comparing(StockSummaryResponse::getProductName));
-
         return new PagedData<>(list, 0, Math.max(list.size(), 1), list.size(), 1, true, true);
     }
 
