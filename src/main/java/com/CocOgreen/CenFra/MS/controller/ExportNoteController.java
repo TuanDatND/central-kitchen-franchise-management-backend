@@ -1,8 +1,7 @@
 package com.CocOgreen.CenFra.MS.controller;
 
-import java.util.List;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.service.ExportNoteService;
@@ -30,22 +30,23 @@ public class ExportNoteController {
 
     @Operation(summary = "Lấy danh sách tất cả Phiếu xuất kho", description = "Trả về danh sách tất cả các phiếu xuất hiện có trong hệ thống.")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getAllExportNotes() {
-        List<ExportNoteDto> response = exportNoteService.findAll();
+    public ResponseEntity<ApiResponse<PagedData<ExportNoteDto>>> getAllExportNotes(
+            @PageableDefault(size = 10) Pageable pageable) {
+        PagedData<ExportNoteDto> response = exportNoteService.findAll(pageable);
         return ResponseEntity.ok(ApiResponse.success(response,"Trả về danh sách tất cả các phiếu xuất thành công"));
     }
 
     @Operation(summary = "Lấy danh sách Phiếu xuất kho theo code", description = "Trả về danh sách các phiếu xuất hiện có trong hệ thống theo code.")
     @GetMapping("/findByCode/{code:.+}")
-    public ResponseEntity<ApiResponse<?>> getExportNotesByCode(
+    public ResponseEntity<ApiResponse<PagedData<ExportNoteDto>>> getExportNotesByCode(
             @PathVariable("code") String code, 
-            Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
 
         if (code == null || code.trim().isEmpty() || code.equals("{code}")) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Vui lòng nhập mã code hợp lệ (không để trống).", "INVALID_CODE"));
         }
 
-        Page<ExportNoteDto> response = exportNoteService.findByExportCode(code, pageable);
+        PagedData<ExportNoteDto> response = exportNoteService.findByExportCode(code, pageable);
         return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm thành công"));
     }
 
@@ -65,7 +66,7 @@ public class ExportNoteController {
 
     @Operation(summary = "Lấy thông tin chi tiết Phiếu xuất kho", description = "Tìm kiếm và trả về chi tiết của phần tử phiếu xuất theo ID.")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getExportNotesById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ExportNoteDto>> getExportNotesById(@PathVariable Integer id) {
         ExportNoteDto response = exportNoteService.findById(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm thành công"));
     }

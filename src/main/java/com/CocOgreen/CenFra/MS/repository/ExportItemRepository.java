@@ -16,6 +16,9 @@ public interface ExportItemRepository extends JpaRepository<ExportItem, Integer>
     // Lấy danh sách item theo id của phiếu xuất
     List<ExportItem> findByExportNote_ExportId(Integer exportId);
 
+    // Lấy danh sách item theo id của phiếu xuất (có phân trang)
+    Page<ExportItem> findByExportNote_ExportId(Integer exportId, Pageable pageable);
+
     // Báo cáo top món tiêu thụ mạnh nhất
     @Query("SELECT new com.CocOgreen.CenFra.MS.dto.response.TopProductResponse(" +
            "e.productBatch.product.productName, CAST(SUM(e.quantity) AS long)) " +

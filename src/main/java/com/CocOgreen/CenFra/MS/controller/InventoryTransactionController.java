@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
+import com.CocOgreen.CenFra.MS.dto.InventoryTransactionDto;
+import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.service.InventoryTransactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +29,7 @@ public class InventoryTransactionController {
 
     @Operation(summary = "Xem Sổ Cái Kho (Transaction Log)", description = "Lấy danh sách lịch sử biến động có phân trang.")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getHistory(
+    public ResponseEntity<ApiResponse<PagedData<InventoryTransactionDto>>> getHistory(
             @PageableDefault(size = 10) Pageable pageable) {
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -38,7 +40,7 @@ public class InventoryTransactionController {
 
     @Operation(summary = "Tìm Kiếm Sổ Cái Kho (Transaction Log)", description = "Lấy lịch sử biến động Nhập / Xuất / Hủy của toàn bộ lô hàng theo mã tham chiếu.")
     @GetMapping("/getHistoryByCode/{referenceCode:.+}")
-    public ResponseEntity<ApiResponse<?>> getHistoryByCode(
+    public ResponseEntity<ApiResponse<PagedData<InventoryTransactionDto>>> getHistoryByCode(
             @PathVariable String referenceCode,  
             @PageableDefault(size = 10) Pageable pageable) {
             
