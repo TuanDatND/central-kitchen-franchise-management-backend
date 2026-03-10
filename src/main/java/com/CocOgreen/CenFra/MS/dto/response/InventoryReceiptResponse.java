@@ -13,16 +13,24 @@ public class InventoryReceiptResponse {
     private Integer receiptId;
     private String receiptCode;
     private Instant receiptDate;
-    private String createdBy;
     private String status;
-    private List<ReceiptItemResponse> items; // Danh sách chi tiết
+
+    // Đối tượng User
+    private Integer createdById;
+    private String createdByName;
+
+    // Danh sách chi tiết
+    private List<ReceiptItemResponse> items;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ReceiptItemResponse {
-        private String batchCode;
-        private String productName;
+        private Integer receiptItemId;
         private Integer quantity;
+
+        // Đối tượng ProductBatch
+        private Integer batchId;
+        private String batchCode;
     }
 }

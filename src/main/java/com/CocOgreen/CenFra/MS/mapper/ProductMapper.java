@@ -12,6 +12,7 @@ public interface ProductMapper {
 
     // 1. Entity -> Response
     // Lấy tên Category và Unit
+    @Mapping(source = "category.categoryId", target = "categoryId")
     @Mapping(source = "category.categoryName", target = "categoryName")
     @Mapping(source = "unit.unitId", target = "unitId")
     @Mapping(source = "unit.unitName", target = "unitName")

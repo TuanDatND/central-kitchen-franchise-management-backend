@@ -11,7 +11,8 @@ import org.mapstruct.Mapping;
 public interface InventoryReceiptMapper {
 
     // 1. Entity -> Response
-    @Mapping(source = "createdBy.fullName", target = "createdBy")
+    @Mapping(source = "createdBy.userId", target = "createdById")
+    @Mapping(source = "createdBy.fullName", target = "createdByName")
     @Mapping(source = "receiptItems", target = "items")
     // MapStruct tự động map List<ReceiptItem> -> List<ReceiptItemResponse> nhờ
     // 'uses'

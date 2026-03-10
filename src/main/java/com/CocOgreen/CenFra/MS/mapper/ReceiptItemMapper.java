@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface ReceiptItemMapper {
 
     // Map từ Entity con -> DTO con (Nested Class)
+    @Mapping(source = "productBatch.batchId", target = "batchId")
     @Mapping(source = "productBatch.batchCode", target = "batchCode")
-    @Mapping(source = "productBatch.product.productName", target = "productName")
     InventoryReceiptResponse.ReceiptItemResponse toResponse(ReceiptItem item);
 }
