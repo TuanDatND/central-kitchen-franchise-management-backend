@@ -11,10 +11,10 @@ import java.util.List;
 public class ManuOrderRequest {
     @NotEmpty(message = "Danh sách sản phẩm không được để trống")
     @Valid
-    private List<Item> items;
+    private List<Product> products;
 
     @Data
-    public static class Item {
+    public static class Product {
         @NotNull(message = "Phải chọn sản phẩm để nấu")
         private Integer productId;
 
