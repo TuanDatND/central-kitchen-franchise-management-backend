@@ -55,7 +55,7 @@ public class ManufacturingOrderService {
 
         List<ManufacturingOrder> ordersToSave = new ArrayList<>();
 
-        for (ManuOrderRequest.Item item : request.getItems()) {
+        for (ManuOrderRequest.Product item : request.getProducts()) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Không tìm thấy sản phẩm với ID: " + item.getProductId()));

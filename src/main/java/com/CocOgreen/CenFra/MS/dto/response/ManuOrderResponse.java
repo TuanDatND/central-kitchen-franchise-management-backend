@@ -11,10 +11,16 @@ import java.time.Instant;
 public class ManuOrderResponse {
     private Integer manuOrderId;
     private String orderCode; // MO-2024...
-    private String productName; // Tên món
-    private Integer quantity; // Số lượng
-    private String unitName; // Đơn vị
-    private String status; // PLANNED, COOKING...
     private Instant startDate;
-    private String createdBy; // Tên người tạo
+    private Instant endDate;
+    private String status; // PLANNED, COOKING...
+    private Integer quantityPlanned; // Số lượng dự kiến
+
+    // Thuộc tính đối tượng Product
+    private Integer productId;
+    private String productName;
+
+    // Thuộc tính đối tượng User
+    private Integer createdById;
+    private String createdByName; // Tên người tạo
 }
