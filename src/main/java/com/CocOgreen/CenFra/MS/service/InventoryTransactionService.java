@@ -17,6 +17,9 @@ import com.CocOgreen.CenFra.MS.repository.InventoryTransactionRepository;
 
 import lombok.AllArgsConstructor;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 @AllArgsConstructor
 @Service
