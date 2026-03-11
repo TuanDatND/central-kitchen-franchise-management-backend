@@ -37,8 +37,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,7 +71,7 @@ public class StoreOrderService {
         StoreOrder order = new StoreOrder(
                 generateOrderCode(),
                 store,
-                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                request.getDeliveryDate());
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
@@ -364,7 +362,6 @@ public class StoreOrderService {
             LocalDateTime actionAt,
             String cancelReason,
             String message) {
-        LocalDate deliveryDate = toLocalDate(order.getDeliveryDate());
         String fullName = actorUser.getFullName();
         if (fullName == null || fullName.isBlank()) {
             fullName = actorUser.getUserName();
@@ -375,22 +372,12 @@ public class StoreOrderService {
                 order.getOrderCode(),
                 order.getStore().getStoreId(),
                 order.getStore().getStoreName(),
-                deliveryDate,
+                order.getDeliveryDate(),
                 previousStatus,
                 order.getStatus(),
                 actor,
                 actionAt,
                 cancelReason,
                 message);
-    }
-
-    private LocalDate toLocalDate(Date date) {
-        if (date == null) {
-            return null;
-        }
-        if (date instanceof java.sql.Date sqlDate) {
-            return sqlDate.toLocalDate();
-        }
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }

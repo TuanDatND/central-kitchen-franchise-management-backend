@@ -15,8 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -43,8 +42,8 @@ public class AdminDashboardService {
         long approvedOrders = storeOrderRepository.countByStatus(StoreOrderStatus.APPROVED);
         long cancelledOrders = storeOrderRepository.countByStatus(StoreOrderStatus.CANCELLED);
 
-        Date todayStart = startOfToday();
-        Date tomorrowStart = startOfTomorrow();
+        LocalDateTime todayStart = startOfToday();
+        LocalDateTime tomorrowStart = startOfTomorrow();
         long ordersToday = storeOrderRepository.countByOrderDateBetween(todayStart, tomorrowStart);
         long pendingOrdersToday = storeOrderRepository.countByStatusAndOrderDateBetween(StoreOrderStatus.PENDING, todayStart, tomorrowStart);
         long approvedOrdersToday = storeOrderRepository.countByStatusAndOrderDateBetween(StoreOrderStatus.APPROVED, todayStart, tomorrowStart);
@@ -84,11 +83,11 @@ public class AdminDashboardService {
         );
     }
 
-    private Date startOfToday() {
-        return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+    private LocalDateTime startOfToday() {
+        return LocalDate.now().atStartOfDay();
     }
 
-    private Date startOfTomorrow() {
-        return Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+    private LocalDateTime startOfTomorrow() {
+        return LocalDate.now().plusDays(1).atStartOfDay();
     }
 }

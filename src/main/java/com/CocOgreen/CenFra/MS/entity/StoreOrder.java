@@ -5,8 +5,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "store_orders")
@@ -29,21 +30,19 @@ public class StoreOrder {
     @OneToMany(mappedBy = "storeOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date orderDate;
+    private LocalDateTime orderDate;
 
-    @Temporal(TemporalType.DATE)
-    private Date deliveryDate;
+    private LocalDate deliveryDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private StoreOrderStatus status;
 
-    public StoreOrder(String orderCode, Store store, Date deliveryDate) {
+    public StoreOrder(String orderCode, Store store, LocalDate deliveryDate) {
         this.orderCode = orderCode;
         this.store = store;
         this.deliveryDate = deliveryDate;
-        this.orderDate = new Date();
+        this.orderDate = LocalDateTime.now();
         this.status = StoreOrderStatus.PENDING;
         this.orderDetails = new ArrayList<>();
     }
