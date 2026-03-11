@@ -55,8 +55,8 @@ public class StoreOrder {
     }
 
     public void cancel() {
-        if (this.status == StoreOrderStatus.CANCELLED) {
-            throw new IllegalStateException("Order already cancelled");
+        if (this.status != StoreOrderStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING order can be cancelled");
         }
         this.status = StoreOrderStatus.CANCELLED;
     }

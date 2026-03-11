@@ -89,8 +89,8 @@ public class StoreOrderController {
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER')")
-    @Operation(summary = "Hủy đơn", description = "SUPPLY_COORDINATOR hoặc MANAGER hủy đơn yêu cầu cấp hàng khi cần.")
+    @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
+    @Operation(summary = "Hủy đơn", description = "FRANCHISE_STORE_STAFF chỉ được hủy đơn PENDING của chính cửa hàng mình.")
     public ResponseEntity<ApiResponse<OrderActionResponseDTO>> cancel(
             @PathVariable Integer id,
             @Valid @RequestBody CancelOrderRequest request) {

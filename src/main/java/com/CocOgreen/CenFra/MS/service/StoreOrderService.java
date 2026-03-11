@@ -146,9 +146,11 @@ public class StoreOrderService {
     @Transactional
     public OrderActionResponseDTO cancelOrder(Integer orderId, CancelOrderRequest request) {
         StoreOrder order = findOrder(orderId);
-        validateCanceller();
+        Authentication auth = getAuthentication();
+        validateCanceller(auth);
+        validateStoreStaffOwnership(order, auth.getName());
         StoreOrderStatus previousStatus = order.getStatus();
-        User actorUser = getCurrentUser(getAuthentication().getName());
+        User actorUser = getCurrentUser(auth.getName());
         order.cancel();
         return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(),
                 "Order cancelled successfully");
@@ -201,9 +203,9 @@ public class StoreOrderService {
         }
     }
 
-    private void validateCanceller() {
-        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
-            throw new AccessDeniedException("Only supply coordinator or manager can cancel order");
+    private void validateCanceller(Authentication auth) {
+        if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            throw new AccessDeniedException("Only franchise store staff can cancel order");
         }
     }
 
