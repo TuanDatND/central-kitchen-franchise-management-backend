@@ -51,11 +51,10 @@ public class ManufacturingOrderController {
         // 3. API Cập nhật trạng thái (Bếp trưởng bấm nút)
         @PatchMapping("/{id}/status")
         @PreAuthorize("hasRole('CENTRAL_KITCHEN_STAFF')")
-        @Operation(summary = "Cập nhật trạng thái lệnh", description = "Dành riêng cho CENTRAL_KITCHEN_STAFF. Update status: PLANNED -> COOKING -> COMPLETED.")
+        @Operation(summary = "Cập nhật trạng thái lệnh (Tự động)", description = "Dành riêng cho CENTRAL_KITCHEN_STAFF. Backend tự động chuyển tiếp trạng thái: PLANNED -> COOKING -> COMPLETED.")
         public ResponseEntity<ApiResponse<ManuOrderResponse>> updateStatus(
-                        @PathVariable Integer id,
-                        @RequestParam ManuOrderStatus status) {
-                ManuOrderResponse response = manufacturingOrderService.updateStatus(id, status);
+                        @PathVariable Integer id) {
+                ManuOrderResponse response = manufacturingOrderService.updateStatus(id);
                 return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật trạng thái lệnh sản xuất thành công"));
         }
 }

@@ -93,20 +93,31 @@ public class ManufacturingOrderService {
     }
 
     /**
-     * Cập nhật trạng thái của lệnh sản xuất.
+     * Cập nhật trạng thái của lệnh sản xuất (Tự động chuyển tiếp).
      * 
-     * @param id        ID của lệnh sản xuất.
-     * @param newStatus Trạng thái mới (ví dụ PLANNED -> COOKING -> COMPLETED).
+     * @param id ID của lệnh sản xuất.
      * @return ManuOrderResponse sau khi cập nhật.
      */
     @Transactional
-    public ManuOrderResponse updateStatus(Integer id, ManuOrderStatus newStatus) {
+    public ManuOrderResponse updateStatus(Integer id) {
         // Tìm MO theo ID, ném ResourceNotFoundException nếu không tìm thấy
         ManufacturingOrder order = manufacturingOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lệnh sản xuất với ID: " + id));
 
+        ManuOrderStatus currentStatus = order.getStatus();
+        ManuOrderStatus newStatus;
+
+        // Xác định trạng thái tiếp theo
+        if (currentStatus == ManuOrderStatus.PLANNED) {
+            newStatus = ManuOrderStatus.COOKING;
+        } else if (currentStatus == ManuOrderStatus.COOKING) {
+            newStatus = ManuOrderStatus.COMPLETED;
+        } else {
+            throw new IllegalStateException("Lệnh sản xuất đã hoàn thành, không thể cập nhật thêm trạng thái.");
+        }
+
         // Logic sinh tự động Lô hạng (ProductBatch) khi lệnh sang trạng thái COMPLETED
-        if (newStatus == ManuOrderStatus.COMPLETED && order.getStatus() != ManuOrderStatus.COMPLETED) {
+        if (newStatus == ManuOrderStatus.COMPLETED) {
             ProductBatch newBatch = new ProductBatch();
             newBatch.setProduct(order.getProduct());
             newBatch.setManufacturingOrder(order);
@@ -125,7 +136,7 @@ public class ManufacturingOrderService {
         order.setStatus(newStatus);
 
         // Nếu chuyển sang trạng thái COOKING thì gán thời gian bắt đầu
-        if (newStatus == ManuOrderStatus.COOKING && order.getStartDate() == null) {
+        if (newStatus == ManuOrderStatus.COOKING) {
             order.setStartDate(Instant.now());
         }
 
