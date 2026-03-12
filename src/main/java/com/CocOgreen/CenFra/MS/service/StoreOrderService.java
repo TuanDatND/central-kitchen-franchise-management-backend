@@ -188,6 +188,48 @@ public class StoreOrderService {
         return consolidateEligibleOrders(orders, auth, "Cần ít nhất 2 đơn APPROVED để gom thủ công");
     }
 
+    @Transactional
+    public Map<String, Object> cancelConsolidation(List<Integer> orderIds) {
+        Authentication auth = getAuthentication();
+        validateConsolidator(auth);
+
+        List<Integer> uniqueOrderIds = orderIds.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+
+        if (uniqueOrderIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần ít nhất 1 orderId hợp lệ để hủy gom đơn");
+        }
+
+        List<StoreOrder> orders = storeOrderRepository.findAllById(uniqueOrderIds);
+        if (orders.size() != uniqueOrderIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Một hoặc nhiều đơn hàng không tồn tại");
+        }
+
+        List<Integer> invalidOrderIds = orders.stream()
+                .filter(order -> order.getStatus() != StoreOrderStatus.CONSOLIDATED)
+                .map(StoreOrder::getOrderId)
+                .sorted()
+                .toList();
+
+        if (!invalidOrderIds.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ được hủy gom các đơn đang ở trạng thái CONSOLIDATED. Invalid orderIds: " + invalidOrderIds);
+        }
+
+        orders.forEach(order -> order.setStatus(StoreOrderStatus.APPROVED));
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("cancelledAt", LocalDateTime.now());
+        response.put("cancelledBy", auth.getName());
+        response.put("totalOrders", uniqueOrderIds.size());
+        response.put("orderIds", uniqueOrderIds.stream().sorted().toList());
+        response.put("currentStatus", StoreOrderStatus.APPROVED);
+        return response;
+    }
+
     private StoreOrder findOrder(Integer id) {
         return storeOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
