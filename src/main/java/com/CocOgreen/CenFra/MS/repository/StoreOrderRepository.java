@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,9 +26,9 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrder, Integer>
 
     long countByStatus(StoreOrderStatus status);
 
-    long countByOrderDateBetween(Date fromInclusive, Date toExclusive);
+    long countByOrderDateBetween(LocalDateTime fromInclusive, LocalDateTime toExclusive);
 
-    long countByStatusAndOrderDateBetween(StoreOrderStatus status, Date fromInclusive, Date toExclusive);
+    long countByStatusAndOrderDateBetween(StoreOrderStatus status, LocalDateTime fromInclusive, LocalDateTime toExclusive);
 
     @Query("""
             select s.storeId as storeId, s.storeName as storeName, count(so.orderId) as totalOrders

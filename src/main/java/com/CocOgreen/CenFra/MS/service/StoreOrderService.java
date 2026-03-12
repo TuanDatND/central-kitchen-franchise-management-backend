@@ -37,8 +37,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,7 +71,7 @@ public class StoreOrderService {
         StoreOrder order = new StoreOrder(
                 generateOrderCode(),
                 store,
-                Date.from(request.getDeliveryDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                request.getDeliveryDate());
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
@@ -148,9 +146,11 @@ public class StoreOrderService {
     @Transactional
     public OrderActionResponseDTO cancelOrder(Integer orderId, CancelOrderRequest request) {
         StoreOrder order = findOrder(orderId);
-        validateCanceller();
+        Authentication auth = getAuthentication();
+        validateCanceller(auth);
+        validateStoreStaffOwnership(order, auth.getName());
         StoreOrderStatus previousStatus = order.getStatus();
-        User actorUser = getCurrentUser(getAuthentication().getName());
+        User actorUser = getCurrentUser(auth.getName());
         order.cancel();
         return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), request.getCancelReason(),
                 "Order cancelled successfully");
@@ -203,9 +203,9 @@ public class StoreOrderService {
         }
     }
 
-    private void validateCanceller() {
-        if (!hasAnyRole(getAuthentication(), RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
-            throw new AccessDeniedException("Only supply coordinator or manager can cancel order");
+    private void validateCanceller(Authentication auth) {
+        if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            throw new AccessDeniedException("Only franchise store staff can cancel order");
         }
     }
 
@@ -364,7 +364,6 @@ public class StoreOrderService {
             LocalDateTime actionAt,
             String cancelReason,
             String message) {
-        LocalDate deliveryDate = toLocalDate(order.getDeliveryDate());
         String fullName = actorUser.getFullName();
         if (fullName == null || fullName.isBlank()) {
             fullName = actorUser.getUserName();
@@ -375,22 +374,12 @@ public class StoreOrderService {
                 order.getOrderCode(),
                 order.getStore().getStoreId(),
                 order.getStore().getStoreName(),
-                deliveryDate,
+                order.getDeliveryDate(),
                 previousStatus,
                 order.getStatus(),
                 actor,
                 actionAt,
                 cancelReason,
                 message);
-    }
-
-    private LocalDate toLocalDate(Date date) {
-        if (date == null) {
-            return null;
-        }
-        if (date instanceof java.sql.Date sqlDate) {
-            return sqlDate.toLocalDate();
-        }
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }
