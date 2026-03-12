@@ -108,57 +108,73 @@ public class  ExportNoteService {
         exportNote.setStatus(ExportStatus.CANCEL);
     }
 
+    /**
+     * Tạo phiếu xuất tự động từ danh sách đơn hàng (FEFO)
+     * Lặp qua từng đơn hàng và xử lý xuất lô phù hợp.
+     * Cả quá trình nằm trong một transaction để đảm bảo toàn vẹn dữ liệu.
+     */
     @Transactional
-    public ExportNoteDto createExportFromOrder(Integer storeOrderId) {
-        StoreOrder storeOrder = storeOrderRepository.findById(storeOrderId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy StoreOrder với id: " + storeOrderId));
-
-        ExportNote exportNote = new ExportNote();
-        exportNote.setStatus(ExportStatus.READY);
-        exportNote.setStoreOrder(storeOrder);
-        exportNote.setExportCode("PX-" + System.currentTimeMillis());
-        List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
-        List<ExportItem> exportItems = new ArrayList<>();
-
-        for (OrderDetail orderDetail : storeOrdersDetail) {
-            int quantity = orderDetail.getQuantity();
-
-            List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
-
-            for (ProductBatch batch : availableBathes) {
-                if (quantity <= 0) break;
-
-                int canTake = Math.min(batch.getCurrentQuantity(), quantity);
-                batch.setCurrentQuantity(batch.getCurrentQuantity() - canTake);
-
-
-                ExportItem item = new ExportItem();
-                item.setExportNote(exportNote);
-                item.setProductBatch(batch);
-                item.setQuantity(canTake);
-                exportItems.add(item);
-
-                quantity -= canTake;
-
-                auditService.logTransaction(
-                        batch,
-                        -canTake,
-                        TransactionType.EXPORT,
-                        exportNote.getExportCode(),
-                        "Xuất kho cho đơn hàng: " + storeOrder.getStore()
-                );
-            }
-            if (quantity > 0) {
-                throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(String.format(
-                        "Kho không đủ hàng cho sản phẩm: %s. Còn thiếu: %d %s",
-                        orderDetail.getProduct().getProductName(),
-                        quantity,
-                        orderDetail.getProduct().getUnit()
-                ));
-            }
+    public List<ExportNoteDto> createExportFromOrder(List<Integer> storeOrderIds) {
+        if (storeOrderIds == null || storeOrderIds.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách StoreOrder ID không được rỗng.");
         }
-        exportNote.setItems(exportItems);
-        return exportNoteMapper.toDto(exportNoteRepositoty.save(exportNote));
+
+        List<ExportNoteDto> result = new ArrayList<>();
+
+        for (Integer storeOrderId : storeOrderIds) {
+            StoreOrder storeOrder = storeOrderRepository.findById(storeOrderId)
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy StoreOrder với id: " + storeOrderId));
+
+            ExportNote exportNote = new ExportNote();
+            exportNote.setStatus(ExportStatus.READY);
+            exportNote.setStoreOrder(storeOrder);
+            // Thêm storeOrderId vào mã PX để tránh trùng lặp khi xử lý nhanh nhiều đơn cùng lúc
+            exportNote.setExportCode("PX-" + System.currentTimeMillis() + "-" + storeOrderId);
+            List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
+            List<ExportItem> exportItems = new ArrayList<>();
+
+            for (OrderDetail orderDetail : storeOrdersDetail) {
+                int quantity = orderDetail.getQuantity();
+
+                List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
+
+                for (ProductBatch batch : availableBathes) {
+                    if (quantity <= 0) break;
+
+                    int canTake = Math.min(batch.getCurrentQuantity(), quantity);
+                    batch.setCurrentQuantity(batch.getCurrentQuantity() - canTake);
+
+
+                    ExportItem item = new ExportItem();
+                    item.setExportNote(exportNote);
+                    item.setProductBatch(batch);
+                    item.setQuantity(canTake);
+                    exportItems.add(item);
+
+                    quantity -= canTake;
+
+                    auditService.logTransaction(
+                            batch,
+                            -canTake,
+                            TransactionType.EXPORT,
+                            exportNote.getExportCode(),
+                            "Xuất kho cho đơn hàng: " + storeOrder.getStore()
+                    );
+                }
+                if (quantity > 0) {
+                    throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(String.format(
+                            "Kho không đủ hàng cho sản phẩm: %s. Còn thiếu: %d %s",
+                            orderDetail.getProduct().getProductName(),
+                            quantity,
+                            orderDetail.getProduct().getUnit()
+                    ));
+                }
+            }
+            exportNote.setItems(exportItems);
+            result.add(exportNoteMapper.toDto(exportNoteRepositoty.save(exportNote)));
+        }
+
+        return result;
     }
 
     @Transactional
