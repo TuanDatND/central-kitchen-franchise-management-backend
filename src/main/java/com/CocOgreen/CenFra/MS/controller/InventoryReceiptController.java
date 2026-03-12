@@ -12,9 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 /**
  * Controller quản lý API Nhập Kho (Inbound Inventory Receipt).
@@ -37,5 +40,23 @@ public class InventoryReceiptController {
         InventoryReceiptResponse response = inventoryReceiptService.createReceipt(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Tạo phiếu nhập kho thành công"));
+    }
+
+    // 2. API Lấy danh sách lịch sử phiếu nhập kho
+    @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'CENTRAL_KITCHEN_STAFF')")
+    @Operation(summary = "Lấy danh sách lịch sử phiếu nhập kho", description = "Sắp xếp theo thời gian mới nhất (DESC).")
+    public ResponseEntity<ApiResponse<List<InventoryReceiptResponse>>> getAllReceipts() {
+        List<InventoryReceiptResponse> responseList = inventoryReceiptService.getAllReceipts();
+        return ResponseEntity.ok(ApiResponse.success(responseList, "Fetched all inventory receipts successfully"));
+    }
+
+    // 3. API Lấy chi tiết phiếu nhập kho theo ID
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'CENTRAL_KITCHEN_STAFF')")
+    @Operation(summary = "Lấy chi tiết phiếu nhập kho", description = "Lấy thông tin một phiếu nhập kho cụ thể theo ID.")
+    public ResponseEntity<ApiResponse<InventoryReceiptResponse>> getReceiptById(@PathVariable Integer id) {
+        InventoryReceiptResponse response = inventoryReceiptService.getReceiptById(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Fetched inventory receipt successfully"));
     }
 }
