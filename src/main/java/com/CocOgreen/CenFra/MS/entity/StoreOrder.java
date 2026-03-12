@@ -25,6 +25,7 @@ public class StoreOrder {
     private String orderCode;
 
     @ManyToOne
+    @JoinColumn(name = "store_id")
     private Store store;
 
     @OneToMany(mappedBy = "storeOrder", cascade = CascadeType.ALL, orphanRemoval = true)
