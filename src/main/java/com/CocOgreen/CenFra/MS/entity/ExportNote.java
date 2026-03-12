@@ -12,7 +12,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "export_notes")
-@Getter  @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExportNote {
@@ -40,6 +41,11 @@ public class ExportNote {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    // Cập nhật hệ thống giao hàng Dev 3 mới
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
 
     @OneToMany(mappedBy = "exportNote", cascade = CascadeType.ALL)
     private List<ExportItem> items;

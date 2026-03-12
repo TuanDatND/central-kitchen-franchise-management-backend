@@ -1,16 +1,19 @@
 package com.CocOgreen.CenFra.MS.service;
 
-import com.CocOgreen.CenFra.MS.entity.ProductBatch;
-import com.CocOgreen.CenFra.MS.enums.BatchStatus;
-import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.CocOgreen.CenFra.MS.entity.ProductBatch;
+import com.CocOgreen.CenFra.MS.enums.BatchStatus;
+import com.CocOgreen.CenFra.MS.enums.TransactionType;
+import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service chạy ngầm định (Scheduled) để kiểm tra và cập nhật trạng thái hết hạn
@@ -22,6 +25,7 @@ import java.util.List;
 public class BatchExpirationService {
 
     private final ProductBatchRepository productBatchRepository;
+    private final InventoryTransactionService inventoryTransactionService;
 
     /**
      * Cron Job tự động chạy định kỳ để dò tìm Lô Hàng đã qua Hạn sử dụng.
@@ -52,6 +56,18 @@ public class BatchExpirationService {
                 log.info(
                         "- Tìm thấy lô hàng [{}] của sản phẩm [{}] hết hạn ngày {}. Đang chuyển trạng thái sang EXPIRED.",
                         batch.getBatchCode(), batch.getProduct().getProductName(), batch.getExpiryDate());
+
+                // Nếu trong kho (AVAILABLE) vẫn còn hàng lúc hết hạn, tiến hành ghi sổ cái DISPOSAL
+                int expiredQty = batch.getCurrentQuantity();
+                if (expiredQty > 0 && batch.getStatus() == BatchStatus.AVAILABLE) {
+                    inventoryTransactionService.logTransaction(
+                            batch,
+                            -expiredQty,      // Lượng tiêu huỷ - âm lượng
+                            TransactionType.DISPOSAL,
+                            "AUTO-EXP-" + System.currentTimeMillis(),
+                            "Hệ thống tự động thanh lý dọn kho vì sản phẩm quá hạn sử dụng."
+                    );                  
+                }
                 batch.setStatus(BatchStatus.EXPIRED);
             }
 

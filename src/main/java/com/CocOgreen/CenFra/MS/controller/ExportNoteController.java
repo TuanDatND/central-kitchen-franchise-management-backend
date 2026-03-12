@@ -1,5 +1,7 @@
 package com.CocOgreen.CenFra.MS.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +13,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
+import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.service.ExportNoteService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +53,13 @@ public class ExportNoteController {
 
         PagedData<ExportNoteDto> response = exportNoteService.findByExportCode(code, pageable);
         return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm thành công"));
+    }
+
+    @Operation(summary = "Lấy danh sách các StoreOrder đủ điều kiện xuất kho", description = "Tìm các StoreOrder có trạng thái APPROVED và tổng số lượng hàng trong các lô (Batch) có sẵn đủ để đáp ứng.")
+    @GetMapping("/ready-orders")
+    public ResponseEntity<ApiResponse<List<StoreOrderDTO>>> getReadyStoreOrders() {
+        List<StoreOrderDTO> response = exportNoteService.getReadyStoreOrders();
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách StoreOrder đủ điều kiện thành công"));
     }
 
     @Operation(summary = "Tạo Phiếu xuất kho thủ công (Manual)(!CHÚ Ý CÁI NÀY CHỈ LÀ BẢN BETA KHI NÀO LÀM XONG HẾT, RẢNH MỚI LÀM CÁI NÀY)", description = "Dành cho nhân viên kho tự chọn lô hàng cụ thể để xuất kho dựa trên Store Order.")

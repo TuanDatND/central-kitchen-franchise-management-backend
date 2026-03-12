@@ -13,6 +13,7 @@ import com.CocOgreen.CenFra.MS.repository.InventoryReceiptRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.ReceiptItemRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
+import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class InventoryReceiptService {
     private final ProductBatchRepository productBatchRepository;
     private final UserRepository userRepository;
     private final InventoryReceiptMapper inventoryReceiptMapper;
+    private final InventoryTransactionService inventoryTransactionService;
 
     /**
      * Tạo mới phiếu nhập kho dựa trên số lượng thực tế kiểm kê được từ Bếp.
@@ -84,6 +86,15 @@ public class InventoryReceiptService {
             batch.setCurrentQuantity(itemRequest.getQuantity());
             batch.setStatus(BatchStatus.AVAILABLE);
             batchesToUpdate.add(batch);
+
+            // Tự động lưu lịch sử vào sổ cái (Immutable Log) khi nhập kho thành công
+            inventoryTransactionService.logTransaction(
+                    batch,
+                    itemRequest.getQuantity(),
+                    TransactionType.IMPORT,
+                    savedReceipt.getReceiptCode(),
+                    "Nhập kho tự động từ phiếu nhập bếp trung tâm"
+            );
 
             // Sinh chi tiết phiếu nhập (Receipt Item) kết nối 2 bảng
             ReceiptItem receiptItem = new ReceiptItem();

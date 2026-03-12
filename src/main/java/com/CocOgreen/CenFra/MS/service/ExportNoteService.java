@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
+import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
 import com.CocOgreen.CenFra.MS.entity.ExportItem;
 import com.CocOgreen.CenFra.MS.entity.ExportNote;
@@ -17,8 +18,10 @@ import com.CocOgreen.CenFra.MS.entity.OrderDetail;
 import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
+import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import com.CocOgreen.CenFra.MS.mapper.ExportNoteMapper;
+import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ExportNoteRepositoty;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
@@ -35,6 +38,7 @@ public class  ExportNoteService {
     private final ExportNoteMapper exportNoteMapper;
     private final StoreOrderRepository storeOrderRepository;
     private final InventoryTransactionService auditService;
+    private final StoreOrderMapper storeOrderMapper;
 
     public PagedData<ExportNoteDto> findAll(Pageable pageable) {
         Page<ExportNote> page = exportNoteRepositoty.findAll(pageable);
@@ -54,6 +58,39 @@ public class  ExportNoteService {
                 .orElseThrow(() -> new EntityNotFoundException("No ExportNote found with id: " + id));
         return exportNoteMapper.toDto(note);
     }
+
+    /**
+     * Lấy danh sách các đơn hàng (StoreOrder) đã được duyệt (APPROVED)
+     * và có đủ số lượng tồn kho (trong các ProductBatch AVAILABLE) để xuất.
+     */
+    @Transactional
+    public List<StoreOrderDTO> getReadyStoreOrders() {
+        List<StoreOrder> approvedOrders = storeOrderRepository.findDistinctByStatusWithDetails(StoreOrderStatus.APPROVED);
+        List<StoreOrder> readyOrders = new ArrayList<>();
+
+        for (StoreOrder order : approvedOrders) {
+            boolean isReady = true;
+            for (OrderDetail detail : order.getOrderDetails()) {
+                int requiredQty = detail.getQuantity();
+
+                List<ProductBatch> availableBatches = productBatchRepository.findAvailableProducts(detail.getProduct(), 0);
+                long totalAvailable = availableBatches.stream()
+                        .mapToLong(ProductBatch::getCurrentQuantity)
+                        .sum();
+
+                if (totalAvailable < requiredQty) {
+                    isReady = false;
+                    break; // Không đủ hàng cho 1 sản phẩm -> Đơn hàng chưa xuất được
+                }
+            }
+            if (isReady) {
+                readyOrders.add(order);
+            }
+        }
+
+        return readyOrders.stream().map(storeOrderMapper::toDTO).collect(Collectors.toList());
+    }
+
 
     @Transactional
     public void updateStatusExportNote(Integer id, ExportStatus status) {
