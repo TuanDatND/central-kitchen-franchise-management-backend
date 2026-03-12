@@ -1,6 +1,5 @@
 package com.CocOgreen.CenFra.MS.exception;
 
-import com.CocOgreen.CenFra.MS.controller.AdminDashboardController;
 import com.CocOgreen.CenFra.MS.controller.AdminStoreController;
 import com.CocOgreen.CenFra.MS.controller.AdminUserController;
 import com.CocOgreen.CenFra.MS.controller.StoreOrderController;
@@ -22,7 +21,6 @@ import java.util.Map;
 
 @RestControllerAdvice(assignableTypes = {
         StoreOrderController.class,
-        AdminDashboardController.class,
         AdminStoreController.class,
         AdminUserController.class
 })
