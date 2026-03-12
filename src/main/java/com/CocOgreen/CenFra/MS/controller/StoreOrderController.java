@@ -121,4 +121,17 @@ public class StoreOrderController {
                 )
         );
     }
+
+    @PostMapping("/consolidate/cancel")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
+    @Operation(summary = "Hủy gom đơn", description = "SUPPLY_COORDINATOR hủy gom các đơn đang ở trạng thái CONSOLIDATED để đưa chúng về APPROVED và gom lại thủ công.")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> cancelConsolidation(
+            @Valid @RequestBody ConsolidateOrdersRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        service.cancelConsolidation(request.getOrderIds()),
+                        "Hủy gom đơn thành công"
+                )
+        );
+    }
 }
