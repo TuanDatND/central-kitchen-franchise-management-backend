@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,16 +56,13 @@ public class DeliveryService {
         delivery.setScheduledDate(request.getScheduledDate());
         delivery.setCreatedBy(currentUser);
         delivery.setStatus(DeliveryStatus.PLANNED);
-
-        // Lưu trước để có ID
         Delivery savedDelivery = deliveryRepository.save(delivery);
 
-        // Map các phiếu xuất (ExportNotes) vào Delivery
         if (request.getExportNoteIds() != null && !request.getExportNoteIds().isEmpty()) {
             List<ExportNote> exportNotes = exportNoteRepository.findAllById(request.getExportNoteIds());
 
             for (ExportNote exportNote : exportNotes) {
-                // Chỉ phiếu nào đang READY mới được đưa đi giao
+
                 if (exportNote.getStatus() != ExportStatus.READY) {
                     throw new IllegalStateException("Phiếu xuất " + exportNote.getExportCode() + " không ở trạng thái READY.");
                 }
