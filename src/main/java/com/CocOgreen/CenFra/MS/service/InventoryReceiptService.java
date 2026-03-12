@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort;
 
 /**
  * Service xử lý Nhập Kho (Inbound Inventory Receipt)
@@ -100,5 +102,26 @@ public class InventoryReceiptService {
 
         // 4. Map sang Response và trả kết quả
         return inventoryReceiptMapper.toResponse(savedReceipt);
+    }
+
+    /**
+     * Lấy danh sách tất cả phiếu nhập kho, sắp xếp theo thời gian mới nhất (DESC).
+     */
+    @Transactional(readOnly = true)
+    public List<InventoryReceiptResponse> getAllReceipts() {
+        return inventoryReceiptRepository.findAll(Sort.by(Sort.Direction.DESC, "receiptDate"))
+                .stream()
+                .map(inventoryReceiptMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy thông tin chi tiết của một phiếu nhập kho theo ID.
+     */
+    @Transactional(readOnly = true)
+    public InventoryReceiptResponse getReceiptById(Integer id) {
+        InventoryReceipt receipt = inventoryReceiptRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory receipt not found"));
+        return inventoryReceiptMapper.toResponse(receipt);
     }
 }
