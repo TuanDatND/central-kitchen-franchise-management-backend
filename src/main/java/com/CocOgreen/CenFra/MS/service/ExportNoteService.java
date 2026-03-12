@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ExportNoteService {
+public class  ExportNoteService {
     private final ExportNoteRepositoty exportNoteRepositoty;
     private final ProductBatchRepository productBatchRepository;
     private final ExportNoteMapper exportNoteMapper;
