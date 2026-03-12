@@ -25,7 +25,7 @@ public class ExportItemController {
 
     private final ExportItemService exportItemService;
 
-    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ !! test bằng Postmain k dùng swagerUI .")
+    @Operation(summary = "Lấy danh sách Item của Phiếu xuất", description = "Danh sách chi tiết các đợt bốc hàng theo lô (batch) của toàn bộ  .")
     @GetMapping
     public ResponseEntity<ApiResponse<PagedData<ExportItemDto>>> getItems(
             @RequestParam(required = false) Integer exportId,
