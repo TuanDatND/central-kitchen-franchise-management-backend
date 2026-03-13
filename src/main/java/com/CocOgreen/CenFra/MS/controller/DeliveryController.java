@@ -59,6 +59,13 @@ public class DeliveryController {
         return ResponseEntity.ok(ApiResponse.success(response, "Chuyến giao hàng hoàn thành."));
     }
 
+    @Operation(summary = "Hủy bỏ một chuyến xe", description = "Hủy một chuyến xe đang ở trạng thái PLANNED. Trả lại các phiếu xuất thành trạng thái READY chờ xếp vào chuyến khác.")
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<DeliveryDto>> cancelDelivery(@PathVariable Integer id) {
+        DeliveryDto response = deliveryService.cancelDelivery(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã hủy bỏ chuyến giao hàng thành công."));
+    }
+
     @Operation(summary = "Tìm kiếm phiếu suất kho sẵn sàng", description = "Giúp tạo các delivery order")
     @GetMapping("/ready-note")
     public ResponseEntity<ApiResponse<List<ExportNoteDto>>> getReadyNote(){
