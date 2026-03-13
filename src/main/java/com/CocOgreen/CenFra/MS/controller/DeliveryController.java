@@ -40,14 +40,14 @@ public class DeliveryController {
     }
 
     @Operation(summary = "Xe xuất phát (IN_TRANSIT)", description = "Đánh dấu chuyến xe đã chạy. Tất cả phiếu xuất kho gắn kèm sẽ đổi sang SHIPPING.")
-    @PutMapping("/{id}/start")
+    @PatchMapping("/{id}/start")
     public ResponseEntity<ApiResponse<DeliveryDto>> startDelivery(@PathVariable Integer id) {
         DeliveryDto response = deliveryService.startDelivery(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Xe đã xuất phát thành công."));
     }
 
     @Operation(summary = "Xe đến Store (COMPLETED)", description = "Đánh dấu xe đã tới nơi. Cập nhật phiếu xuất kho thành SHIPPED.")
-    @PutMapping("/{id}/complete")
+    @PatchMapping("/{id}/complete")
     public ResponseEntity<ApiResponse<DeliveryDto>> completeDelivery(@PathVariable Integer id) {
         DeliveryDto response = deliveryService.completeDelivery(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Chuyến giao hàng hoàn thành."));
