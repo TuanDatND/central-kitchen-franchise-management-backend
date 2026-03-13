@@ -11,7 +11,7 @@ import com.CocOgreen.CenFra.MS.entity.ExportNote;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 
 
-public interface ExportNoteRepositoty extends JpaRepository<ExportNote, Integer> {
+public interface ExportNoteRepository extends JpaRepository<ExportNote, Integer> {
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"storeOrder", "storeOrder.store"})
     @Query("SELECT e FROM ExportNote e WHERE LOWER(e.exportCode) LIKE LOWER(CONCAT('%', :exportCode, '%'))")
     Page<ExportNote> searchByExportCode(@org.springframework.data.repository.query.Param("exportCode") String exportCode, Pageable pageable);

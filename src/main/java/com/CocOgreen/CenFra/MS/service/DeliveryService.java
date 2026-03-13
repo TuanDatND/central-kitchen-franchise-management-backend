@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.DeliveryDto;
+import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.request.DeliveryRequest;
 import com.CocOgreen.CenFra.MS.entity.Delivery;
@@ -9,8 +10,9 @@ import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.DeliveryStatus;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.mapper.DeliveryMapper;
+import com.CocOgreen.CenFra.MS.mapper.ExportNoteMapper;
 import com.CocOgreen.CenFra.MS.repository.DeliveryRepository;
-import com.CocOgreen.CenFra.MS.repository.ExportNoteRepositoty;
+import com.CocOgreen.CenFra.MS.repository.ExportNoteRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.EmptyStackException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,9 +31,14 @@ import java.util.stream.Collectors;
 public class DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
-    private final ExportNoteRepositoty exportNoteRepository;
+    private final ExportNoteRepository exportNoteRepository;
     private final DeliveryMapper deliveryMapper;
     private final UserRepository userRepository;
+    private final ExportNoteMapper exportNoteMapper;
+
+    public List<ExportNoteDto> getReadyExportNote(){
+        return exportNoteRepository.findByStatus(ExportStatus.READY).stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public PagedData<DeliveryDto> findAll(Pageable pageable) {
@@ -67,6 +73,7 @@ public class DeliveryService {
                     throw new IllegalStateException("Phiếu xuất " + exportNote.getExportCode() + " không ở trạng thái READY.");
                 }
                 exportNote.setDelivery(savedDelivery);
+                exportNote.setStatus(ExportStatus.PLANNED);
             }
             exportNoteRepository.saveAll(exportNotes);
             savedDelivery.setExportNotes(exportNotes);
