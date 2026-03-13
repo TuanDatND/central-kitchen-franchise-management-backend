@@ -2,6 +2,7 @@ package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.DeliveryDto;
+import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.request.DeliveryRequest;
 import com.CocOgreen.CenFra.MS.service.DeliveryService;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,5 +51,12 @@ public class DeliveryController {
     public ResponseEntity<ApiResponse<DeliveryDto>> completeDelivery(@PathVariable Integer id) {
         DeliveryDto response = deliveryService.completeDelivery(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Chuyến giao hàng hoàn thành."));
+    }
+
+    @Operation(summary = "Tìm kiếm phiếu suất kho sẵn sàng", description = "Giúp tạo các delivery order")
+    @GetMapping("/ready-note")
+    public ResponseEntity<ApiResponse<List<ExportNoteDto>>> getReadyNote(){
+        List<ExportNoteDto> list = deliveryService.getReadyExportNote();
+        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách ExportNote đủ điều kiện thành công"));
     }
 }

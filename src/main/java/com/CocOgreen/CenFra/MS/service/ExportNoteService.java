@@ -22,7 +22,7 @@ import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import com.CocOgreen.CenFra.MS.mapper.ExportNoteMapper;
 import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
-import com.CocOgreen.CenFra.MS.repository.ExportNoteRepositoty;
+import com.CocOgreen.CenFra.MS.repository.ExportNoteRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class  ExportNoteService {
-    private final ExportNoteRepositoty exportNoteRepositoty;
+    private final ExportNoteRepository exportNoteRepository;
     private final ProductBatchRepository productBatchRepository;
     private final ExportNoteMapper exportNoteMapper;
     private final StoreOrderRepository storeOrderRepository;
@@ -41,20 +41,20 @@ public class  ExportNoteService {
     private final StoreOrderMapper storeOrderMapper;
 
     public PagedData<ExportNoteDto> findAll(Pageable pageable) {
-        Page<ExportNote> page = exportNoteRepositoty.findAll(pageable);
+        Page<ExportNote> page = exportNoteRepository.findAll(pageable);
         List<ExportNoteDto> dtoList = page.getContent().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
         return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 
     public PagedData<ExportNoteDto> findByExportCode(String exportCode, Pageable pageable) {
         String searchKeyword = (exportCode != null) ? exportCode.trim() : "";
-        Page<ExportNote> page = exportNoteRepositoty.searchByExportCode(searchKeyword, pageable);
+        Page<ExportNote> page = exportNoteRepository.searchByExportCode(searchKeyword, pageable);
         List<ExportNoteDto> dtoList = page.getContent().stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
         return new PagedData<>(dtoList, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast());
     }
 
     public ExportNoteDto findById(Integer id) {
-        ExportNote note = exportNoteRepositoty.findById(id)
+        ExportNote note = exportNoteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("No ExportNote found with id: " + id));
         return exportNoteMapper.toDto(note);
     }
@@ -94,71 +94,85 @@ public class  ExportNoteService {
 
     @Transactional
     public void updateStatusExportNote(Integer id, ExportStatus status) {
-        ExportNote exportNote = exportNoteRepositoty.findById(id).get();
+        ExportNote exportNote = exportNoteRepository.findById(id).get();
         exportNote.setStatus(status);
-        exportNoteRepositoty.save(exportNote);
+        exportNoteRepository.save(exportNote);
     }
 
     @Transactional
     public void deleteNote(Integer id) {
-        ExportNote exportNote = exportNoteRepositoty.findById(id).get();
+        ExportNote exportNote = exportNoteRepository.findById(id).get();
         if (ExportStatus.SHIPPED.equals(exportNote.getStatus())) {
             throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException("Cannot delete ExportNote which already Shipped");
         }
         exportNote.setStatus(ExportStatus.CANCEL);
     }
 
+    /**
+     * Tạo phiếu xuất tự động từ danh sách đơn hàng (FEFO)
+     * Lặp qua từng đơn hàng và xử lý xuất lô phù hợp.
+     * Cả quá trình nằm trong một transaction để đảm bảo toàn vẹn dữ liệu.
+     */
     @Transactional
-    public ExportNoteDto createExportFromOrder(Integer storeOrderId) {
-        StoreOrder storeOrder = storeOrderRepository.findById(storeOrderId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy StoreOrder với id: " + storeOrderId));
-
-        ExportNote exportNote = new ExportNote();
-        exportNote.setStatus(ExportStatus.READY);
-        exportNote.setStoreOrder(storeOrder);
-        exportNote.setExportCode("PX-" + System.currentTimeMillis());
-        List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
-        List<ExportItem> exportItems = new ArrayList<>();
-
-        for (OrderDetail orderDetail : storeOrdersDetail) {
-            int quantity = orderDetail.getQuantity();
-
-            List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
-
-            for (ProductBatch batch : availableBathes) {
-                if (quantity <= 0) break;
-
-                int canTake = Math.min(batch.getCurrentQuantity(), quantity);
-                batch.setCurrentQuantity(batch.getCurrentQuantity() - canTake);
-
-
-                ExportItem item = new ExportItem();
-                item.setExportNote(exportNote);
-                item.setProductBatch(batch);
-                item.setQuantity(canTake);
-                exportItems.add(item);
-
-                quantity -= canTake;
-
-                auditService.logTransaction(
-                        batch,
-                        -canTake,
-                        TransactionType.EXPORT,
-                        exportNote.getExportCode(),
-                        "Xuất kho cho đơn hàng: " + storeOrder.getStore()
-                );
-            }
-            if (quantity > 0) {
-                throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(String.format(
-                        "Kho không đủ hàng cho sản phẩm: %s. Còn thiếu: %d %s",
-                        orderDetail.getProduct().getProductName(),
-                        quantity,
-                        orderDetail.getProduct().getUnit()
-                ));
-            }
+    public List<ExportNoteDto> createExportFromOrder(List<Integer> storeOrderIds) {
+        if (storeOrderIds == null || storeOrderIds.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách StoreOrder ID không được rỗng.");
         }
-        exportNote.setItems(exportItems);
-        return exportNoteMapper.toDto(exportNoteRepositoty.save(exportNote));
+
+        List<ExportNoteDto> result = new ArrayList<>();
+
+        for (Integer storeOrderId : storeOrderIds) {
+            StoreOrder storeOrder = storeOrderRepository.findById(storeOrderId)
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy StoreOrder với id: " + storeOrderId));
+
+            ExportNote exportNote = new ExportNote();
+            exportNote.setStatus(ExportStatus.READY);
+            exportNote.setStoreOrder(storeOrder);
+            exportNote.setExportCode("PX-" + System.currentTimeMillis() + "-" + storeOrderId);
+            List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
+            List<ExportItem> exportItems = new ArrayList<>();
+
+            for (OrderDetail orderDetail : storeOrdersDetail) {
+                int quantity = orderDetail.getQuantity();
+
+                List<ProductBatch> availableBathes = productBatchRepository.findAvailableProducts(orderDetail.getProduct(), 0);
+
+                for (ProductBatch batch : availableBathes) {
+                    if (quantity <= 0) break;
+
+                    int canTake = Math.min(batch.getCurrentQuantity(), quantity);
+                    batch.setCurrentQuantity(batch.getCurrentQuantity() - canTake);
+
+
+                    ExportItem item = new ExportItem();
+                    item.setExportNote(exportNote);
+                    item.setProductBatch(batch);
+                    item.setQuantity(canTake);
+                    exportItems.add(item);
+
+                    quantity -= canTake;
+
+                    auditService.logTransaction(
+                            batch,
+                            -canTake,
+                            TransactionType.EXPORT,
+                            exportNote.getExportCode(),
+                            "Xuất kho cho đơn hàng: " + storeOrder.getStore()
+                    );
+                }
+                if (quantity > 0) {
+                    throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(String.format(
+                            "Kho không đủ hàng cho sản phẩm: %s. Còn thiếu: %d %s",
+                            orderDetail.getProduct().getProductName(),
+                            quantity,
+                            orderDetail.getProduct().getUnit()
+                    ));
+                }
+            }
+            exportNote.setItems(exportItems);
+            result.add(exportNoteMapper.toDto(exportNoteRepository.save(exportNote)));
+        }
+        return result;
     }
 
     @Transactional
@@ -203,7 +217,7 @@ public class  ExportNoteService {
         }
 
         exportNote.setItems(exportItems);
-        exportNote = exportNoteRepositoty.save(exportNote);
+        exportNote = exportNoteRepository.save(exportNote);
 
         return exportNoteMapper.toDto(exportNote);
     }

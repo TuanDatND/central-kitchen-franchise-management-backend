@@ -69,11 +69,11 @@ public class ExportNoteController {
         return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Thành Công"));
     }
 
-    @Operation(summary = "Tạo Phiếu xuất kho tự động (Auto FEFO)", description = "Hệ thống tự động quét và trừ số lượng các lô hàng sắp hết hạn (FEFO) dựa trên Store Order.")
-    @PostMapping("/createAutoNote/{storeOderId}")
-    public ResponseEntity<ApiResponse<ExportNoteDto>> createAutoNote(@PathVariable Integer storeOderId) {
-        ExportNoteDto response = exportNoteService.createExportFromOrder(storeOderId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Thành Công"));
+    @Operation(summary = "Tạo Phiếu xuất kho tự động (Auto FEFO) cho nhiều đơn", description = "Hệ thống tự động quét và xuất kho theo FEFO dựa trên danh sách các Store Order ID.")
+    @PostMapping("/createAutoNote")
+    public ResponseEntity<ApiResponse<List<ExportNoteDto>>> createAutoNote(@RequestBody List<Integer> storeOrderIds) {
+        List<ExportNoteDto> response = exportNoteService.createExportFromOrder(storeOrderIds);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Tự Động Thành Công Cho Các Đơn Hàng"));
     }
 
     @Operation(summary = "Lấy thông tin chi tiết Phiếu xuất kho", description = "Tìm kiếm và trả về chi tiết của phần tử phiếu xuất theo ID.")
