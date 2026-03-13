@@ -41,6 +41,13 @@ public class DeliveryService {
     }
 
     @Transactional(readOnly = true)
+    public com.CocOgreen.CenFra.MS.dto.DeliveryDetailDto getDeliveryById(Integer id) {
+        Delivery delivery = deliveryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Chuyến giao hàng ID: " + id));
+        return deliveryMapper.toDetailDto(delivery);
+    }
+
+    @Transactional(readOnly = true)
     public PagedData<DeliveryDto> findAll(Pageable pageable) {
         Page<Delivery> page = deliveryRepository.findAll(pageable);
         List<DeliveryDto> dtoList = page.getContent().stream()
