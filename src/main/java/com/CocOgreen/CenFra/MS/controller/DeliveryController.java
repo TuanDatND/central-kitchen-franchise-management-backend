@@ -32,6 +32,12 @@ public class DeliveryController {
         return ResponseEntity.ok(ApiResponse.success(deliveryService.findAll(pageable), "Lấy danh sách thành công"));
     }
 
+    @Operation(summary = "Lấy chi tiết 1 chuyến giao hàng", description = "Xem chi tiết chuyến xe và danh sách chi tiết các phiếu xuất kho bên trong chuyến xe đó.")
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<com.CocOgreen.CenFra.MS.dto.DeliveryDetailDto>> getDeliveryById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(deliveryService.getDeliveryById(id), "Lấy chi tiết chuyến giao hàng thành công"));
+    }
+
     @Operation(summary = "Lên lịch chuyến xe mới (Assign Export Notes)", description = "Tạo xe mới và gom nhóm các phiếu xuất có trạng thái READY vào xe.")
     @PostMapping
     public ResponseEntity<ApiResponse<DeliveryDto>> createDelivery(@RequestBody DeliveryRequest request) {
