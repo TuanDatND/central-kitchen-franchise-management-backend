@@ -113,6 +113,29 @@ public class DeliveryService {
     }
 
     @Transactional
+    public DeliveryDto cancelDelivery(Integer deliveryId) {
+        Delivery delivery = deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Chuyến giao hàng ID: " + deliveryId));
+
+        if (delivery.getStatus() != DeliveryStatus.PLANNED) {
+            throw new IllegalStateException("Chỉ có thể hủy những chuyến xe đang ở trạng thái PLANNED (chưa xuất phát).");
+        }
+
+        delivery.setStatus(DeliveryStatus.CANCELLED);
+
+        // Khôi phục các phiếu xuất về trạng thái READY và giải phóng khỏi chuyến xe
+        if (delivery.getExportNotes() != null) {
+            for (ExportNote note : delivery.getExportNotes()) {
+                note.setStatus(ExportStatus.READY);
+                note.setDelivery(null); // Remove association
+            }
+            exportNoteRepository.saveAll(delivery.getExportNotes());
+        }
+
+        return deliveryMapper.toDto(deliveryRepository.save(delivery));
+    }
+
+    @Transactional
     public DeliveryDto completeDelivery(Integer deliveryId) {
         Delivery delivery = deliveryRepository.findById(deliveryId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Chuyến giao hàng ID: " + deliveryId));
