@@ -65,7 +65,7 @@ public class  ExportNoteService {
      */
     @Transactional
     public List<StoreOrderDTO> getReadyStoreOrders() {
-        List<StoreOrder> approvedOrders = storeOrderRepository.findDistinctByStatusWithDetails(StoreOrderStatus.APPROVED);
+        List<StoreOrder> approvedOrders = storeOrderRepository.findDistinctByStatusWithDetails(StoreOrderStatus.CONSOLIDATED);
         List<StoreOrder> readyOrders = new ArrayList<>();
 
         for (StoreOrder order : approvedOrders) {
@@ -170,6 +170,7 @@ public class  ExportNoteService {
                 }
             }
             exportNote.setItems(exportItems);
+            storeOrder.setStatus(StoreOrderStatus.AWAITING_DELIVERY);
             result.add(exportNoteMapper.toDto(exportNoteRepository.save(exportNote)));
         }
         return result;
