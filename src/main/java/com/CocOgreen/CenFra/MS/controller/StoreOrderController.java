@@ -8,6 +8,7 @@ import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.service.StoreOrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -70,6 +72,15 @@ public class StoreOrderController {
     @Operation(summary = "Lấy chi tiết đơn", description = "Xem chi tiết một đơn yêu cầu cấp hàng theo ID.")
     public ResponseEntity<ApiResponse<StoreOrderDTO>> detail(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(service.getOrderDetail(id), "Lấy chi tiết đơn thành công"));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
+    @Operation(summary = "Chỉnh sửa đơn", description = "FRANCHISE_STORE_STAFF được cập nhật đơn của chính cửa hàng mình khi đơn vẫn đang chờ duyệt.")
+    public ResponseEntity<ApiResponse<StoreOrderDTO>> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateStoreOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(service.updateOrder(id, request), "Cập nhật đơn thành công"));
     }
 
     @GetMapping("/dashboard/top-stores")
