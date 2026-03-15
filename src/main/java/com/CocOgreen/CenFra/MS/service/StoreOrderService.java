@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -74,10 +75,7 @@ public class StoreOrderService {
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
-            OrderDetail detail = new OrderDetail();
-            detail.setProduct(productMap.get(line.getProductId()));
-            detail.setQuantity(line.getQuantity());
-            order.addOrderDetail(detail);
+            order.addOrderDetail(createOrderDetail(productMap.get(line.getProductId()), line.getQuantity()));
         }
 
         StoreOrder saved = storeOrderRepository.save(order);
@@ -105,10 +103,7 @@ public class StoreOrderService {
         order.getOrderDetails().clear();
 
         for (OrderLineRequest line : request.getDetails()) {
-            OrderDetail detail = new OrderDetail();
-            detail.setProduct(productMap.get(line.getProductId()));
-            detail.setQuantity(line.getQuantity());
-            order.addOrderDetail(detail);
+            order.addOrderDetail(createOrderDetail(productMap.get(line.getProductId()), line.getQuantity()));
         }
 
         return storeOrderMapper.toDTO(order);
@@ -421,6 +416,21 @@ public class StoreOrderService {
             throw new IllegalArgumentException("One or more products do not exist");
         }
         return products.stream().collect(Collectors.toMap(Product::getProductId, p -> p));
+    }
+
+    private OrderDetail createOrderDetail(Product product, Integer quantity) {
+        OrderDetail detail = new OrderDetail();
+        detail.setProduct(product);
+        detail.setQuantity(quantity);
+        detail.setUnitPrice(resolveProductPrice(product));
+        return detail;
+    }
+
+    private BigDecimal resolveProductPrice(Product product) {
+        if (product.getPrice() == null) {
+            throw new IllegalArgumentException("Product price is missing: " + product.getProductId());
+        }
+        return product.getPrice();
     }
 
     private void validateDeliveryDate(LocalDate deliveryDate) {
