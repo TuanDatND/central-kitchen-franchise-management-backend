@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -15,4 +17,6 @@ public class OrderDetailDTO {
     private String productName;
     private String unitName;
     private Integer quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal lineTotal;
 }

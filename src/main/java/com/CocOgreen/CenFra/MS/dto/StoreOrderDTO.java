@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +27,8 @@ public class StoreOrderDTO {
     private LocalDate deliveryDate;
 
     private StoreOrderStatus status;
+
+    private BigDecimal totalAmount;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<OrderDetailDTO> details;
