@@ -14,6 +14,9 @@ public class ProductResponse {
     private String description;
     private String status; // ACTIVE/INACTIVE
 
+    private java.math.BigDecimal price;
+    private Integer shelfLifeDays;
+
     private Integer categoryId;
     private String categoryName; // Tên danh mục (đã join bảng)
 

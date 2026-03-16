@@ -17,4 +17,10 @@ public class ProductRequest {
 
     @NotNull(message = "Phải chọn danh mục")
     private Integer categoryId; // Gửi ID của Category
+
+    @jakarta.validation.constraints.Min(value = 0, message = "Giá không được nhỏ hơn 0")
+    private java.math.BigDecimal price;
+
+    @jakarta.validation.constraints.Min(value = 1, message = "Hạn sử dụng phải từ 1 ngày trở lên")
+    private Integer shelfLifeDays;
 }

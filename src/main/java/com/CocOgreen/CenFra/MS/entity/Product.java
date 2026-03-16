@@ -34,6 +34,12 @@ public class Product {
     @Column(name = "status")
     private ProductStatus status;
 
+    @Column(name = "price", precision = 10, scale = 2)
+    private java.math.BigDecimal price;
+
+    @Column(name = "shelf_life_days")
+    private Integer shelfLifeDays;
+
     // FK: category_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

@@ -127,7 +127,11 @@ public class ManufacturingOrderService {
             newBatch.setCurrentQuantity(0); // Sẽ được cập nhật sau khi nhận kho thực tế
             newBatch.setStatus(BatchStatus.WAITING_FOR_STOCK);
             newBatch.setManufacturingDate(LocalDate.now()); // Ngày sản xuất thực tế bằng ngày hiện tại
-            newBatch.setExpiryDate(LocalDate.now().plusDays(7)); // Hạn sử dụng mặc định 7 ngày
+            
+            Product product = order.getProduct();
+            Integer shelfLife = product.getShelfLifeDays() != null ? product.getShelfLifeDays() : 0;
+            LocalDate calculatedExpiryDate = LocalDate.now().plusDays(shelfLife);
+            newBatch.setExpiryDate(calculatedExpiryDate);
 
             productBatchRepository.save(newBatch);
         }

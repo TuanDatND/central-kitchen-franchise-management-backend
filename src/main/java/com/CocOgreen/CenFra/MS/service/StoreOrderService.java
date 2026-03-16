@@ -7,6 +7,7 @@ import com.CocOgreen.CenFra.MS.dto.OrderActionActorDTO;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
 import com.CocOgreen.CenFra.MS.dto.OrderLineRequest;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
+import com.CocOgreen.CenFra.MS.dto.UpdateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.entity.OrderDetail;
 import com.CocOgreen.CenFra.MS.entity.Product;
 import com.CocOgreen.CenFra.MS.entity.Store;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -64,9 +66,7 @@ public class StoreOrderService {
         if (store.getStatus() != StoreStatus.ACTIVE) {
             throw new IllegalArgumentException("Store is inactive");
         }
-        if (request.getDeliveryDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Delivery date must be today or in the future");
-        }
+        validateDeliveryDate(request.getDeliveryDate());
 
         StoreOrder order = new StoreOrder(
                 generateOrderCode(),
@@ -75,14 +75,38 @@ public class StoreOrderService {
 
         Map<Integer, Product> productMap = resolveProducts(request.getDetails());
         for (OrderLineRequest line : request.getDetails()) {
-            OrderDetail detail = new OrderDetail();
-            detail.setProduct(productMap.get(line.getProductId()));
-            detail.setQuantity(line.getQuantity());
-            order.addOrderDetail(detail);
+            order.addOrderDetail(createOrderDetail(productMap.get(line.getProductId()), line.getQuantity()));
         }
 
         StoreOrder saved = storeOrderRepository.save(order);
         return storeOrderMapper.toDTO(saved);
+    }
+
+    @Transactional
+    public StoreOrderDTO updateOrder(Integer orderId, UpdateStoreOrderRequest request) {
+        Authentication auth = getAuthentication();
+        validateOrderEditor(auth);
+
+        StoreOrder order = findOrder(orderId);
+        validateStoreStaffOwnership(order, auth.getName());
+
+        if (order.getStatus() != StoreOrderStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ được chỉnh sửa đơn hàng khi đơn đang ở trạng thái PENDING");
+        }
+
+        validateDeliveryDate(request.getDeliveryDate());
+
+        Map<Integer, Product> productMap = resolveProducts(request.getDetails());
+        order.setDeliveryDate(request.getDeliveryDate());
+        order.getOrderDetails().clear();
+
+        for (OrderLineRequest line : request.getDetails()) {
+            order.addOrderDetail(createOrderDetail(productMap.get(line.getProductId()), line.getQuantity()));
+        }
+
+        return storeOrderMapper.toDTO(order);
     }
 
     @Transactional(readOnly = true)
@@ -104,7 +128,7 @@ public class StoreOrderService {
             throw new AccessDeniedException("You do not have permission to view orders");
         }
 
-        return orders.map(storeOrderMapper::toDTO);
+        return orders.map(order -> toOrderDto(order, auth));
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +142,7 @@ public class StoreOrderService {
             throw new AccessDeniedException("You do not have permission to view this order");
         }
 
-        return storeOrderMapper.toDTO(order);
+        return toOrderDto(order, auth);
     }
 
     @Transactional(readOnly = true)
@@ -248,6 +272,12 @@ public class StoreOrderService {
     private void validateCanceller(Authentication auth) {
         if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             throw new AccessDeniedException("Only franchise store staff can cancel order");
+        }
+    }
+
+    private void validateOrderEditor(Authentication auth) {
+        if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            throw new AccessDeniedException("Only franchise store staff can update order");
         }
     }
 
@@ -388,8 +418,37 @@ public class StoreOrderService {
         return products.stream().collect(Collectors.toMap(Product::getProductId, p -> p));
     }
 
+    private OrderDetail createOrderDetail(Product product, Integer quantity) {
+        OrderDetail detail = new OrderDetail();
+        detail.setProduct(product);
+        detail.setQuantity(quantity);
+        detail.setUnitPrice(resolveProductPrice(product));
+        return detail;
+    }
+
+    private BigDecimal resolveProductPrice(Product product) {
+        if (product.getPrice() == null) {
+            throw new IllegalArgumentException("Product price is missing: " + product.getProductId());
+        }
+        return product.getPrice();
+    }
+
+    private void validateDeliveryDate(LocalDate deliveryDate) {
+        if (deliveryDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Delivery date must be today or in the future");
+        }
+    }
+
     private String generateOrderCode() {
         return "SO-" + System.currentTimeMillis() + "-" + ThreadLocalRandom.current().nextInt(1000, 10000);
+    }
+
+    private StoreOrderDTO toOrderDto(StoreOrder order, Authentication auth) {
+        StoreOrderDTO dto = storeOrderMapper.toDTO(order);
+        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF) && dto.getStatus() == StoreOrderStatus.CONSOLIDATED) {
+            dto.setStatus(StoreOrderStatus.APPROVED);
+        }
+        return dto;
     }
 
     private Map<String, Object> toDashboardRow(TopStoreOrderProjection projection) {
