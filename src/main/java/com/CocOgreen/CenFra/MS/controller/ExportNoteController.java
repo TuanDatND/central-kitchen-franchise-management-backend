@@ -19,6 +19,7 @@ import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
+import com.CocOgreen.CenFra.MS.dto.response.ExportPreviewResponse;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.service.ExportNoteService;
 
@@ -67,6 +68,20 @@ public class ExportNoteController {
     public ResponseEntity<ApiResponse<ExportNoteDto>> createManualNote(@RequestBody ManualExportRequest request) {
         ExportNoteDto response = exportNoteService.createExportFromManualBatches(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Thành Công"));
+    }
+
+    @Operation(
+        summary = "Xem trước kế hoạch xuất kho FEFO (Preview)",
+        description = "Hệ thống mô phỏng thuật toán FEFO và trả về danh sách lô hàng dự kiến sẽ được lấy "
+                    + "cho từng sản phẩm trong đơn hàng. KHÔNG lưu dữ liệu. "
+                    + "Dùng để xem trước trước khi gọi /createAutoNote."
+    )
+    @GetMapping("/preview")
+    public ResponseEntity<ApiResponse<List<ExportPreviewResponse>>> previewAutoNote(
+            @RequestBody List<Integer> storeOrderIds) {
+        List<ExportPreviewResponse> response = exportNoteService.previewExportFromOrder(storeOrderIds);
+        return ResponseEntity.ok(ApiResponse.success(response,
+                "Xem trước kế hoạch xuất kho thành công. Vui lòng kiểm tra và xác nhận."));
     }
 
     @Operation(summary = "Tạo Phiếu xuất kho tự động (Auto FEFO) cho nhiều đơn", description = "Hệ thống tự động quét và xuất kho theo FEFO dựa trên danh sách các Store Order ID.")

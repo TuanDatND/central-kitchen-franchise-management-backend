@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('MANAGER', 'CENTRAL_KITCHEN_STAFF')")
+@PreAuthorize("hasAnyRole('MANAGER', 'CENTRAL_KITCHEN_STAFF','SUPPLY_COORDINATOR')")
 public class InventoryReportService {
 
     private final ProductBatchRepository productBatchRepository;
