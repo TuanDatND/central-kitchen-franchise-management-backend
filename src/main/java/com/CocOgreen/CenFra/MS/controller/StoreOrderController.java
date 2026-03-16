@@ -108,6 +108,13 @@ public class StoreOrderController {
         return ResponseEntity.ok(ApiResponse.success(service.cancelOrder(id, request), "Hủy đơn thành công"));
     }
 
+    @PostMapping("/{id}/receive")
+    @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
+    @Operation(summary = "Xác nhận nhận hàng", description = "FRANCHISE_STORE_STAFF xác nhận đã nhận đơn của chính cửa hàng mình để chuyển trạng thái từ AWAITING_DELIVERY sang DONE.")
+    public ResponseEntity<ApiResponse<OrderActionResponseDTO>> receive(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(service.receiveOrder(id), "Xác nhận nhận hàng thành công"));
+    }
+
     @PostMapping("/consolidate/auto")
     @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
     @Operation(summary = "Gom đơn tự động", description = "SUPPLY_COORDINATOR bấm một nút để hệ thống tự lấy tất cả đơn APPROVED và gom theo từng sản phẩm. Sau khi gom thành công, các đơn tham gia sẽ chuyển sang CONSOLIDATED.")
