@@ -187,7 +187,7 @@ public class StoreOrderService {
         validateStoreStaffReceiver(auth);
         validateStoreStaffOwnership(order, auth.getName());
 
-        if (order.getStatus() != StoreOrderStatus.AWAITING_DELIVERY) {
+        if (order.getStatus() != StoreOrderStatus.IN_TRANSIT) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Chỉ được xác nhận nhận hàng khi đơn đang ở trạng thái AWAITING_DELIVERY");
