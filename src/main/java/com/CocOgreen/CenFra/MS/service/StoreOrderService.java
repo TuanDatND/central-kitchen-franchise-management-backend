@@ -181,6 +181,26 @@ public class StoreOrderService {
     }
 
     @Transactional
+    public OrderActionResponseDTO receiveOrder(Integer orderId) {
+        StoreOrder order = findOrder(orderId);
+        Authentication auth = getAuthentication();
+        validateStoreStaffReceiver(auth);
+        validateStoreStaffOwnership(order, auth.getName());
+
+        if (order.getStatus() != StoreOrderStatus.AWAITING_DELIVERY) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ được xác nhận nhận hàng khi đơn đang ở trạng thái AWAITING_DELIVERY");
+        }
+
+        StoreOrderStatus previousStatus = order.getStatus();
+        User actorUser = getCurrentUser(auth.getName());
+        order.markAsReceived();
+        return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null,
+                "Xác nhận nhận hàng thành công");
+    }
+
+    @Transactional
     public ConsolidatedOrderResponse consolidateOrdersAutomatically() {
         Authentication auth = getAuthentication();
         validateConsolidator(auth);
@@ -272,6 +292,12 @@ public class StoreOrderService {
     private void validateCanceller(Authentication auth) {
         if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
             throw new AccessDeniedException("Only franchise store staff can cancel order");
+        }
+    }
+
+    private void validateStoreStaffReceiver(Authentication auth) {
+        if (!hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            throw new AccessDeniedException("Only franchise store staff can confirm receiving order");
         }
     }
 

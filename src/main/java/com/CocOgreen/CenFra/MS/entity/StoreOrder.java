@@ -69,6 +69,13 @@ public class StoreOrder {
         this.status = StoreOrderStatus.CONSOLIDATED;
     }
 
+    public void markAsReceived() {
+        if (this.status != StoreOrderStatus.AWAITING_DELIVERY) {
+            throw new IllegalStateException("Only AWAITING_DELIVERY order can be marked as DONE");
+        }
+        this.status = StoreOrderStatus.DONE;
+    }
+
     public void addOrderDetail(OrderDetail detail) {
         this.orderDetails.add(detail);
         detail.setStoreOrder(this);
