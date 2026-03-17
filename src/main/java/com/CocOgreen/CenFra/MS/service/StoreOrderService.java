@@ -190,7 +190,7 @@ public class StoreOrderService {
         if (order.getStatus() != StoreOrderStatus.IN_TRANSIT) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Chỉ được xác nhận nhận hàng khi đơn đang ở trạng thái AWAITING_DELIVERY");
+                    "Chỉ được xác nhận nhận hàng khi đơn đang ở trạng thái IN_TRANSIT");
         }
 
         StoreOrderStatus previousStatus = order.getStatus();

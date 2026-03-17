@@ -53,4 +53,12 @@ public class Delivery {
 
     @OneToMany(mappedBy = "delivery", cascade = CascadeType.ALL)
     private List<ExportNote> exportNotes;
+
+    /**
+     * Cột lưu snapshot JSON toàn bộ thông tin các phiếu xuất
+     * (cửa hàng, sản phẩm, số lượng, lô hàng...)
+     * TRƯỚC KHI chuyến bị hủy. Không bao giờ bị ghi đè sau khi được set.
+     */
+    @Column(name = "cancelled_notes_snapshot", columnDefinition = "TEXT")
+    private String cancelledNotesSnapshot;
 }
