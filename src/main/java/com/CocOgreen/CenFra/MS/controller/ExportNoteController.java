@@ -76,7 +76,7 @@ public class ExportNoteController {
                     + "cho từng sản phẩm trong đơn hàng. KHÔNG lưu dữ liệu. "
                     + "Dùng để xem trước trước khi gọi /createAutoNote."
     )
-    @GetMapping("/preview")
+    @PostMapping("/preview")
     public ResponseEntity<ApiResponse<List<ExportPreviewResponse>>> previewAutoNote(
             @RequestBody List<Integer> storeOrderIds) {
         List<ExportPreviewResponse> response = exportNoteService.previewExportFromOrder(storeOrderIds);
