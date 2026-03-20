@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import java.util.TimeZone;
+
 /**
  * Cấu hình Jackson ObjectMapper cho hệ thống.
  * Việc định nghĩa Bean ở đây đảm bảo Spring có thể inject ObjectMapper vào DeliveryService
@@ -25,6 +27,9 @@ public class JacksonConfig {
         
         // Không viết các ngày dưới dạng timestamps (ISO format)
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
+        // Cài đặt múi giờ toàn ứng dụng sang Việt Nam
+        mapper.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         
         return mapper;
     }
