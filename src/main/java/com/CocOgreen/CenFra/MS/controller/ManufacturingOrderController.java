@@ -29,8 +29,8 @@ public class ManufacturingOrderController {
 
         // 1. API Tạo lệnh sản xuất (Coordinator gửi yêu cầu)
         @PostMapping
-        @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
-        @Operation(summary = "Tạo lệnh sản xuất mới hàng loạt", description = "Dành riêng cho SUPPLY_COORDINATOR. Lên kế hoạch sản xuất dựa vào danh sách ID món và số lượng.")
+        @PreAuthorize("hasRole('MANAGER')")
+        @Operation(summary = "Tạo lệnh sản xuất mới hàng loạt", description = "Dành riêng cho MANAGER. Lên kế hoạch sản xuất dựa vào danh sách ID món và số lượng.")
         public ResponseEntity<ApiResponse<List<ManuOrderResponse>>> createOrders(
                         @Valid @RequestBody ManuOrderRequest request) {
                 List<ManuOrderResponse> responseList = manufacturingOrderService.createOrders(request);
