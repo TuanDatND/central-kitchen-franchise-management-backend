@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final UnitRepository unitRepository;
     private final ProductMapper productMapper;
+    private final FileUploadService fileUploadService;
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll().stream()
@@ -40,7 +42,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse createProduct(ProductRequest request) {
+    public ProductResponse createProduct(ProductRequest request, MultipartFile image) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
@@ -53,12 +55,18 @@ public class ProductService {
         product.setUnit(unit);
         product.setStatus(ProductStatus.ACTIVE); // Default status
 
+        // Xử lý upload ảnh nếu có
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileUploadService.uploadFile(image);
+            product.setImageUrl(imageUrl);
+        }
+
         product = productRepository.save(product);
         return productMapper.toResponse(product);
     }
 
     @Transactional
-    public ProductResponse updateProduct(Integer id, ProductRequest request) {
+    public ProductResponse updateProduct(Integer id, ProductRequest request, MultipartFile image) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
@@ -72,6 +80,12 @@ public class ProductService {
         productMapper.updateProduct(product, request);
         product.setCategory(category);
         product.setUnit(unit);
+
+        // Xử lý upload ảnh mới nếu dùng MultipartFile
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileUploadService.uploadFile(image);
+            product.setImageUrl(imageUrl);
+        }
 
         product = productRepository.save(product);
         return productMapper.toResponse(product);
