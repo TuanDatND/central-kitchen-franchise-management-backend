@@ -32,5 +32,6 @@ public interface ProductMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "unit", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
     void updateProduct(@MappingTarget Product product, ProductRequest request);
 }

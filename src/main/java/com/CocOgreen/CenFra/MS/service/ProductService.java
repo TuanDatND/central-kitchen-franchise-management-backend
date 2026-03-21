@@ -77,14 +77,23 @@ public class ProductService {
         Unit unit = unitRepository.findById(request.getUnitId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unit not found with id: " + request.getUnitId()));
 
+        String oldImageUrl = product.getImageUrl(); // Backup URL cũ
+
         productMapper.updateProduct(product, request);
         product.setCategory(category);
         product.setUnit(unit);
+
+        // Cập nhật status nếu có truyền vào
+        if (request.getStatus() != null) {
+            product.setStatus(request.getStatus());
+        }
 
         // Xử lý upload ảnh mới nếu dùng MultipartFile
         if (image != null && !image.isEmpty()) {
             String imageUrl = fileUploadService.uploadFile(image);
             product.setImageUrl(imageUrl);
+        } else if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
+            product.setImageUrl(oldImageUrl); // Phục hồi ảnh cũ nếu không có URL mới trong request
         }
 
         product = productRepository.save(product);

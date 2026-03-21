@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.dto.request;
 
+import com.CocOgreen.CenFra.MS.enums.ProductStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -27,4 +28,6 @@ public class ProductRequest {
     @NotNull(message = "Order multiplier không được để trống")
     @jakarta.validation.constraints.Min(value = 1, message = "Order multiplier must be at least 1")
     private Integer orderMultiplier;
+
+    private ProductStatus status;
 }
