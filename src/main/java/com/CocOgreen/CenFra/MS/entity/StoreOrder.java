@@ -76,6 +76,20 @@ public class StoreOrder {
         this.status = StoreOrderStatus.DONE;
     }
 
+    public void markDeliveryIssuePending() {
+        if (this.status != StoreOrderStatus.IN_TRANSIT) {
+            throw new IllegalStateException("Only IN_TRANSIT order can be marked as DELIVERY_ISSUE_PENDING");
+        }
+        this.status = StoreOrderStatus.DELIVERY_ISSUE_PENDING;
+    }
+
+    public void markDeliveryFailed() {
+        if (this.status != StoreOrderStatus.DELIVERY_ISSUE_PENDING && this.status != StoreOrderStatus.IN_TRANSIT) {
+            throw new IllegalStateException("Only IN_TRANSIT or DELIVERY_ISSUE_PENDING order can be marked as DELIVERY_FAILED");
+        }
+        this.status = StoreOrderStatus.DELIVERY_FAILED;
+    }
+
     public void addOrderDetail(OrderDetail detail) {
         this.orderDetails.add(detail);
         detail.setStoreOrder(this);

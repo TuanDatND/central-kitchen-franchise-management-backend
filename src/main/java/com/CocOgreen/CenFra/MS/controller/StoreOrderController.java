@@ -7,9 +7,12 @@ import com.CocOgreen.CenFra.MS.dto.CreateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
 import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
+import com.CocOgreen.CenFra.MS.dto.DeliveryIssueResponse;
+import com.CocOgreen.CenFra.MS.dto.RejectDeliveryRequest;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreOrderRequest;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
+import com.CocOgreen.CenFra.MS.service.DeliveryIssueService;
 import com.CocOgreen.CenFra.MS.service.StoreOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,6 +41,7 @@ import java.util.Map;
 @Tag(name = "Dev 1 - Store Order Management", description = "APIs quản lý luồng xin hàng của cửa hàng: tạo đơn, theo dõi đơn, duyệt/hủy và gom đơn.")
 public class StoreOrderController {
     private final StoreOrderService service;
+    private final DeliveryIssueService deliveryIssueService;
 
     @PostMapping
     @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
@@ -110,9 +114,20 @@ public class StoreOrderController {
 
     @PostMapping("/{id}/receive")
     @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
-    @Operation(summary = "Xác nhận nhận hàng", description = "FRANCHISE_STORE_STAFF xác nhận đã nhận đơn của chính cửa hàng mình để chuyển trạng thái từ AWAITING_DELIVERY sang DONE.")
+    @Operation(summary = "Xác nhận nhận hàng", description = "FRANCHISE_STORE_STAFF xác nhận đã nhận đơn của chính cửa hàng mình để chuyển trạng thái từ IN_TRANSIT sang DONE.")
     public ResponseEntity<ApiResponse<OrderActionResponseDTO>> receive(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(service.receiveOrder(id), "Xác nhận nhận hàng thành công"));
+    }
+
+    @PostMapping("/{id}/reject-delivery")
+    @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
+    @Operation(summary = "Từ chối nhận hàng", description = "FRANCHISE_STORE_STAFF báo sự cố hoặc từ chối nhận đơn đang giao. Hệ thống tạo delivery issue để coordinator review.")
+    public ResponseEntity<ApiResponse<DeliveryIssueResponse>> rejectDelivery(
+            @PathVariable Integer id,
+            @Valid @RequestBody RejectDeliveryRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                deliveryIssueService.reportIssue(id, request),
+                "Tạo delivery issue thành công"));
     }
 
     @PostMapping("/consolidate/auto")
