@@ -26,5 +26,6 @@ public class DeliveryDetailDto {
      * Chỉ có giá trị khi status = CANCELLED.
      * Bao gồm: mã phiếu, cửa hàng, sản phẩm, số lượng, lô hàng...
      */
+    @com.fasterxml.jackson.annotation.JsonRawValue
     private String cancelledNotesSnapshot;
 }

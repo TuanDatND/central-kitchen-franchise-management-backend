@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -39,20 +41,23 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(product, "Lấy thông tin sản phẩm thành công"));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Tạo sản phẩm mới")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductRequest request) {
-        ProductResponse response = productService.createProduct(request);
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
+            @Valid @ModelAttribute ProductRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        ProductResponse response = productService.createProduct(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo sản phẩm thành công"));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cập nhật sản phẩm")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable Integer id,
-            @Valid @RequestBody ProductRequest request) {
-        ProductResponse response = productService.updateProduct(id, request);
+            @Valid @ModelAttribute ProductRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        ProductResponse response = productService.updateProduct(id, request, image);
         return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật sản phẩm thành công"));
     }
 
