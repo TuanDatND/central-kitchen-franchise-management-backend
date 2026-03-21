@@ -37,7 +37,7 @@ public class CloudinaryServiceImpl implements FileUploadService {
             log.info("Bắt đầu upload ảnh lên Cloudinary...");
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "public_id", publicId,
-                    "folder", "products" // Lưu vào thư mục products
+                    "folder", "products"
             ));
 
             String secureUrl = (String) result.get("secure_url");
