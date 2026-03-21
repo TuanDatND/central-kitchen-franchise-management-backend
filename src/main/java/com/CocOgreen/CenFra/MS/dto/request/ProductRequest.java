@@ -23,4 +23,8 @@ public class ProductRequest {
 
     @jakarta.validation.constraints.Min(value = 1, message = "Hạn sử dụng phải từ 1 ngày trở lên")
     private Integer shelfLifeDays;
+
+    @NotNull(message = "Order multiplier không được để trống")
+    @jakarta.validation.constraints.Min(value = 1, message = "Order multiplier must be at least 1")
+    private Integer orderMultiplier;
 }

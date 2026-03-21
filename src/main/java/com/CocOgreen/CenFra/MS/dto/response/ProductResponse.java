@@ -16,6 +16,7 @@ public class ProductResponse {
 
     private java.math.BigDecimal price;
     private Integer shelfLifeDays;
+    private Integer orderMultiplier;
 
     private Integer categoryId;
     private String categoryName; // Tên danh mục (đã join bảng)
