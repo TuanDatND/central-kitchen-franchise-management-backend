@@ -20,6 +20,9 @@ public class DeliveryDto {
     // Tóm tắt các phiếu xuất đi kèm
     private List<ExportNoteSummaryDto> exportNotes;
 
+    @com.fasterxml.jackson.annotation.JsonRawValue
+    private String cancelledNotesSnapshot;
+
     @Data
     public static class ExportNoteSummaryDto {
         private Integer exportId;
