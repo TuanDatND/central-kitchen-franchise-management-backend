@@ -1,7 +1,6 @@
 package com.CocOgreen.CenFra.MS.entity;
 
 import com.CocOgreen.CenFra.MS.enums.DeliveryIssueDecision;
-import com.CocOgreen.CenFra.MS.enums.DeliveryIssueReason;
 import com.CocOgreen.CenFra.MS.enums.DeliveryIssueStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,10 +44,6 @@ public class DeliveryIssue {
     @Column(name = "status", nullable = false)
     private DeliveryIssueStatus status = DeliveryIssueStatus.PENDING_REVIEW;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "issue_reason", nullable = false)
-    private DeliveryIssueReason reason;
-
     @Column(name = "issue_note", length = 2000)
     private String note;
 
@@ -69,4 +64,7 @@ public class DeliveryIssue {
     @Enumerated(EnumType.STRING)
     @Column(name = "review_decision")
     private DeliveryIssueDecision reviewDecision;
+
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    private String imageUrls;
 }

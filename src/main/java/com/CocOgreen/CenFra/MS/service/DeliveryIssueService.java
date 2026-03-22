@@ -5,6 +5,7 @@ import com.CocOgreen.CenFra.MS.dto.OrderActionActorDTO;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.RejectDeliveryRequest;
 import com.CocOgreen.CenFra.MS.dto.ReviewDeliveryIssueRequest;
+import com.CocOgreen.CenFra.MS.dto.UploadedFileResult;
 import com.CocOgreen.CenFra.MS.entity.DeliveryIssue;
 import com.CocOgreen.CenFra.MS.entity.OrderDetail;
 import com.CocOgreen.CenFra.MS.entity.StoreOrder;
@@ -17,6 +18,9 @@ import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.repository.DeliveryIssueRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,19 +32,24 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class DeliveryIssueService {
     private static final String ROLE_PREFIX = "ROLE_";
+    private static final String DELIVERY_ISSUE_IMAGE_FOLDER = "delivery-issues";
 
     private final DeliveryIssueRepository deliveryIssueRepository;
     private final StoreOrderRepository storeOrderRepository;
     private final UserRepository userRepository;
+    private final FileUploadService fileUploadService;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public DeliveryIssueResponse reportIssue(Integer orderId, RejectDeliveryRequest request) {
@@ -67,7 +76,6 @@ public class DeliveryIssueService {
 
         DeliveryIssue issue = new DeliveryIssue();
         issue.setStoreOrder(order);
-        issue.setReason(request.getReason());
         issue.setNote(request.getNote());
         issue.setReportedBy(reporter);
         issue.setReportedAt(LocalDateTime.now());
@@ -106,6 +114,53 @@ public class DeliveryIssueService {
     }
 
     @Transactional
+    public DeliveryIssueResponse uploadIssueImages(Integer issueId, List<MultipartFile> images) {
+        Authentication auth = getAuthentication();
+        DeliveryIssue issue = findIssue(issueId);
+
+        validateIssueImagePermission(issue, auth);
+        validateIssueStillEditable(issue);
+
+        List<MultipartFile> validImages = images == null ? List.of() : images.stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .toList();
+
+        if (validImages.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần ít nhất 1 ảnh hợp lệ để tải lên");
+        }
+
+        List<String> currentImageUrls = readImageUrls(issue);
+        for (MultipartFile image : validImages) {
+            UploadedFileResult uploadResult = fileUploadService.uploadFileWithMetadata(image, DELIVERY_ISSUE_IMAGE_FOLDER);
+            currentImageUrls.add(uploadResult.getSecureUrl());
+        }
+        issue.setImageUrls(writeImageUrls(currentImageUrls));
+
+        return toResponse(issue);
+    }
+
+    @Transactional
+    public DeliveryIssueResponse deleteIssueImage(Integer issueId, String imageUrl) {
+        Authentication auth = getAuthentication();
+        DeliveryIssue issue = findIssue(issueId);
+
+        validateIssueImagePermission(issue, auth);
+        validateIssueStillEditable(issue);
+
+        if (imageUrl == null || imageUrl.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageUrl không được để trống");
+        }
+
+        List<String> currentImageUrls = readImageUrls(issue);
+        boolean removed = currentImageUrls.removeIf(url -> imageUrl.equals(url));
+        if (!removed) {
+            throw new ResourceNotFoundException("Không tìm thấy ảnh của delivery issue");
+        }
+        issue.setImageUrls(writeImageUrls(currentImageUrls));
+        return toResponse(issue);
+    }
+
+    @Transactional
     public DeliveryIssueResponse reviewIssue(Integer issueId, ReviewDeliveryIssueRequest request) {
         Authentication auth = getAuthentication();
         requireAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER);
@@ -119,17 +174,18 @@ public class DeliveryIssueService {
         StoreOrder originalOrder = issue.getStoreOrder();
 
         if (request.getDecision() == DeliveryIssueDecision.CREATE_REPLACEMENT_ORDER) {
+            validateOrderStateForIssueApproval(originalOrder);
             originalOrder.markDeliveryFailed();
             StoreOrder replacementOrder = createReplacementOrder(originalOrder, request.getNewDeliveryDate());
             issue.setReplacementOrder(storeOrderRepository.save(replacementOrder));
             issue.setStatus(DeliveryIssueStatus.APPROVED);
         } else {
-            LocalDate rescheduledDate = request.getNewDeliveryDate() == null
-                    ? originalOrder.getDeliveryDate()
-                    : request.getNewDeliveryDate();
-            validateDeliveryDate(rescheduledDate);
-            originalOrder.setDeliveryDate(rescheduledDate);
-            originalOrder.setStatus(StoreOrderStatus.APPROVED);
+            if (request.getNewDeliveryDate() != null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Reject issue không cho phép truyền ngày giao mới");
+            }
+            originalOrder.setStatus(StoreOrderStatus.DONE);
             issue.setStatus(DeliveryIssueStatus.REJECTED);
         }
 
@@ -138,6 +194,15 @@ public class DeliveryIssueService {
         issue.setReviewedAt(LocalDateTime.now());
 
         return toResponse(issue);
+    }
+
+    private void validateOrderStateForIssueApproval(StoreOrder order) {
+        if (order.getStatus() != StoreOrderStatus.IN_TRANSIT
+                && order.getStatus() != StoreOrderStatus.DELIVERY_ISSUE_PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể approve issue khi đơn đang ở trạng thái IN_TRANSIT hoặc DELIVERY_ISSUE_PENDING");
+        }
     }
 
     private StoreOrder createReplacementOrder(StoreOrder originalOrder, LocalDate requestedDeliveryDate) {
@@ -180,7 +245,6 @@ public class DeliveryIssueService {
         return new DeliveryIssueResponse(
                 issue.getIssueId(),
                 issue.getStatus(),
-                issue.getReason(),
                 issue.getNote(),
                 originalOrder.getOrderId(),
                 originalOrder.getOrderCode(),
@@ -194,7 +258,28 @@ public class DeliveryIssueService {
                 issue.getReviewedAt(),
                 issue.getReviewDecision(),
                 replacementOrder == null ? null : replacementOrder.getOrderId(),
-                replacementOrder == null ? null : replacementOrder.getOrderCode());
+                replacementOrder == null ? null : replacementOrder.getOrderCode(),
+                readImageUrls(issue));
+    }
+
+    private List<String> readImageUrls(DeliveryIssue issue) {
+        if (issue.getImageUrls() == null || issue.getImageUrls().isBlank()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            return new java.util.ArrayList<>(
+                    objectMapper.readValue(issue.getImageUrls(), new TypeReference<List<String>>() {}));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Không thể parse image_urls của delivery issue", e);
+        }
+    }
+
+    private String writeImageUrls(List<String> imageUrls) {
+        try {
+            return objectMapper.writeValueAsString(imageUrls);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Không thể lưu image_urls của delivery issue", e);
+        }
     }
 
     private OrderActionActorDTO toActor(User user) {
@@ -236,15 +321,41 @@ public class DeliveryIssueService {
         }
     }
 
+    private void validateIssueImagePermission(DeliveryIssue issue, Authentication auth) {
+        if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            return;
+        }
+        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            validateStoreStaffOwnership(issue.getStoreOrder(), auth.getName());
+            return;
+        }
+        throw new AccessDeniedException("Bạn không có quyền cập nhật ảnh của issue này");
+    }
+
+    private void validateIssueStillEditable(DeliveryIssue issue) {
+        if (issue.getStatus() != DeliveryIssueStatus.PENDING_REVIEW) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ được cập nhật ảnh khi delivery issue đang ở trạng thái PENDING_REVIEW");
+        }
+    }
+
     private void requireAnyRole(Authentication auth, RoleName... roles) {
+        if (hasAnyRole(auth, roles)) {
+            return;
+        }
+        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+    }
+
+    private boolean hasAnyRole(Authentication auth, RoleName... roles) {
         for (RoleName role : roles) {
             String authority = ROLE_PREFIX + role.name();
             boolean matched = auth.getAuthorities().stream().anyMatch(a -> authority.equals(a.getAuthority()));
             if (matched) {
-                return;
+                return true;
             }
         }
-        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+        return false;
     }
 
     private void validateDeliveryDate(LocalDate deliveryDate) {
