@@ -121,7 +121,7 @@ public class StoreOrderController {
 
     @PostMapping("/{id}/reject-delivery")
     @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
-    @Operation(summary = "Từ chối nhận hàng", description = "FRANCHISE_STORE_STAFF báo sự cố hoặc từ chối nhận đơn đang giao. Hệ thống tạo delivery issue để coordinator review.")
+    @Operation(summary = "Từ chối nhận hàng", description = "FRANCHISE_STORE_STAFF gửi ghi chú sự cố hoặc từ chối nhận đơn đang giao. Hệ thống tạo delivery issue để coordinator review.")
     public ResponseEntity<ApiResponse<DeliveryIssueResponse>> rejectDelivery(
             @PathVariable Integer id,
             @Valid @RequestBody RejectDeliveryRequest request) {
