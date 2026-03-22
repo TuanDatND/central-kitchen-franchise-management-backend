@@ -10,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.CocOgreen.CenFra.MS.entity.Product;
+import com.CocOgreen.CenFra.MS.enums.ProductStatus;
+import com.CocOgreen.CenFra.MS.repository.ProductRepository;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +23,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final ProductRepository productRepository;
 
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll().stream()
@@ -53,6 +58,11 @@ public class CategoryService {
         // Nếu người dùng có gửi kèm trạng thái mới thì cập nhật
         if (request.getStatus() != null) {
             category.setStatus(request.getStatus());
+            
+            // Nếu trạng thái mới là INACTIVE, ta vô hiệu hóa tất cả sản phẩm thuộc danh mục này
+            if (CategoryStatus.INACTIVE.equals(request.getStatus())) {
+                deactivateProductsByCategory(category);
+            }
         }
         
         category = categoryRepository.save(category);
@@ -69,6 +79,17 @@ public class CategoryService {
         }
 
         category.setStatus(CategoryStatus.INACTIVE);
+        deactivateProductsByCategory(category);
         categoryRepository.save(category);
+    }
+
+    private void deactivateProductsByCategory(Category category) {
+        List<Product> products = category.getProducts();
+        if (products != null && !products.isEmpty()) {
+            for (Product product : products) {
+                product.setStatus(ProductStatus.INACTIVE);
+            }
+            productRepository.saveAll(products);
+        }
     }
 }
