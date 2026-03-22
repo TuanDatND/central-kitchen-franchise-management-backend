@@ -40,6 +40,9 @@ public class Product {
     @Column(name = "shelf_life_days")
     private Integer shelfLifeDays;
 
+    @Column(name = "order_multiplier")
+    private Integer orderMultiplier = 1;
+
     // FK: category_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

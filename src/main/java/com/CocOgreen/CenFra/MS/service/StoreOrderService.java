@@ -445,6 +445,11 @@ public class StoreOrderService {
     }
 
     private OrderDetail createOrderDetail(Product product, Integer quantity) {
+        int multiplier = product.getOrderMultiplier() != null ? product.getOrderMultiplier() : 1;
+        if (quantity % multiplier != 0) {
+            throw new IllegalArgumentException(String.format("Số lượng đặt hàng không hợp lệ cho sản phẩm '%s'. Số lượng phải là bội số của %d.", product.getProductName(), multiplier));
+        }
+
         OrderDetail detail = new OrderDetail();
         detail.setProduct(product);
         detail.setQuantity(quantity);
