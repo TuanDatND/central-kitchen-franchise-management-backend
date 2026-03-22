@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.dto.request;
 
+import com.CocOgreen.CenFra.MS.enums.CategoryStatus;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -7,4 +8,6 @@ import lombok.Data;
 public class CategoryRequest {
     @NotBlank(message = "Tên danh mục không được để trống")
     private String categoryName;
+
+    private CategoryStatus status;
 }
