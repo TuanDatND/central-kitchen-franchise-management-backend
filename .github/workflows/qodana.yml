@@ -6,6 +6,7 @@ on:
 
 jobs:
   qodana:
+    name: Qodana for JVM  # <--- THÊM DÒNG NÀY: Phải khớp 100% với tên trong hình của bạn
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,9 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Quan trọng để Qodana phân tích lịch sử commit
+          fetch-depth: 0
 
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2025.3
         env:
-          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }} # (Tùy chọn) Nếu bạn muốn đẩy báo cáo lên Qodana Cloud
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }} # Đừng quên Token như lỗi log nãy nhé
