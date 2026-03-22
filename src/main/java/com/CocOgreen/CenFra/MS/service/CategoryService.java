@@ -48,10 +48,13 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
-        if (CategoryStatus.INACTIVE.equals(category.getStatus())) {
-            throw new RuntimeException("Category not found with id: " + id);
-        }
         category.setCategoryName(request.getCategoryName());
+        
+        // Nếu người dùng có gửi kèm trạng thái mới thì cập nhật
+        if (request.getStatus() != null) {
+            category.setStatus(request.getStatus());
+        }
+        
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);
     }
