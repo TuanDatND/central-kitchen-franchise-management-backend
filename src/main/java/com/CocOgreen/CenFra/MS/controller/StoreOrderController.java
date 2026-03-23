@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,9 +28,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -119,14 +122,15 @@ public class StoreOrderController {
         return ResponseEntity.ok(ApiResponse.success(service.receiveOrder(id), "Xác nhận nhận hàng thành công"));
     }
 
-    @PostMapping("/{id}/reject-delivery")
+    @PostMapping(value = "/{id}/reject-delivery", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('FRANCHISE_STORE_STAFF')")
-    @Operation(summary = "Từ chối nhận hàng", description = "FRANCHISE_STORE_STAFF gửi ghi chú sự cố hoặc từ chối nhận đơn đang giao. Hệ thống tạo delivery issue để coordinator review.")
+    @Operation(summary = "Từ chối nhận hàng", description = "FRANCHISE_STORE_STAFF gửi payload JSON gồm lý do + ghi chú và ảnh minh chứng (nếu có) khi từ chối nhận đơn đang giao. Hệ thống tạo delivery issue để coordinator review.")
     public ResponseEntity<ApiResponse<DeliveryIssueResponse>> rejectDelivery(
             @PathVariable Integer id,
-            @Valid @RequestBody RejectDeliveryRequest request) {
+            @Valid @RequestPart("payload") RejectDeliveryRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         return ResponseEntity.ok(ApiResponse.success(
-                deliveryIssueService.reportIssue(id, request),
+                deliveryIssueService.reportIssue(id, request, images),
                 "Tạo delivery issue thành công"));
     }
 

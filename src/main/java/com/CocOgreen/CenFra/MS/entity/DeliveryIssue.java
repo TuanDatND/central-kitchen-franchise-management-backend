@@ -1,7 +1,10 @@
 package com.CocOgreen.CenFra.MS.entity;
 
 import com.CocOgreen.CenFra.MS.enums.DeliveryIssueDecision;
+import com.CocOgreen.CenFra.MS.enums.DeliveryIssueReason;
+import com.CocOgreen.CenFra.MS.enums.DeliveryIssueResolution;
 import com.CocOgreen.CenFra.MS.enums.DeliveryIssueStatus;
+import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,8 +47,29 @@ public class DeliveryIssue {
     @Column(name = "status", nullable = false)
     private DeliveryIssueStatus status = DeliveryIssueStatus.PENDING_REVIEW;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reported_order_status", nullable = false)
+    private StoreOrderStatus reportedOrderStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "issue_reason", nullable = false)
+    private DeliveryIssueReason reason;
+
     @Column(name = "issue_note", length = 2000)
     private String note;
+
+    @Column(name = "total_quantity")
+    private Integer totalQuantity;
+
+    @Column(name = "affected_quantity")
+    private Integer affectedQuantity;
+
+    @Column(name = "issue_items_json", columnDefinition = "TEXT")
+    private String issueItemsJson;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recommended_resolution")
+    private DeliveryIssueResolution recommendedResolution;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_by", nullable = false)
@@ -64,6 +88,10 @@ public class DeliveryIssue {
     @Enumerated(EnumType.STRING)
     @Column(name = "review_decision")
     private DeliveryIssueDecision reviewDecision;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "selected_resolution")
+    private DeliveryIssueResolution selectedResolution;
 
     @Column(name = "image_urls", columnDefinition = "TEXT")
     private String imageUrls;

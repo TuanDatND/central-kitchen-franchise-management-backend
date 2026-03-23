@@ -112,15 +112,19 @@ public class StoreOrderService {
     @Transactional(readOnly = true)
     public Page<StoreOrderDTO> listOrders(StoreOrderStatus status, int page, int size) {
         Authentication auth = getAuthentication();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
-
         Page<StoreOrder> orders;
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
             Store store = resolveStoreForStaff(auth.getName());
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
         } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.ASC, "deliveryDate")
+                            .and(Sort.by(Sort.Direction.ASC, "orderDate")));
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);

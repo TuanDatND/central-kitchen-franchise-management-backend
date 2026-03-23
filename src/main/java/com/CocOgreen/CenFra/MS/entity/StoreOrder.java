@@ -35,6 +35,9 @@ public class StoreOrder {
 
     private LocalDate deliveryDate;
 
+    @Column(name = "received_at")
+    private LocalDateTime receivedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private StoreOrderStatus status;
@@ -74,11 +77,12 @@ public class StoreOrder {
             throw new IllegalStateException("Only IN_TRANSIT order can be marked as DONE");
         }
         this.status = StoreOrderStatus.DONE;
+        this.receivedAt = LocalDateTime.now();
     }
 
     public void markDeliveryIssuePending() {
-        if (this.status != StoreOrderStatus.IN_TRANSIT) {
-            throw new IllegalStateException("Only IN_TRANSIT order can be marked as DELIVERY_ISSUE_PENDING");
+        if (this.status != StoreOrderStatus.IN_TRANSIT && this.status != StoreOrderStatus.DONE) {
+            throw new IllegalStateException("Only IN_TRANSIT or DONE order can be marked as DELIVERY_ISSUE_PENDING");
         }
         this.status = StoreOrderStatus.DELIVERY_ISSUE_PENDING;
     }
