@@ -75,8 +75,15 @@ public class DeliveryIssueService {
                     "Đơn hàng này đã có một issue đang chờ coordinator xử lý");
         }
 
-        List<DeliveryIssueItemRequest> normalizedItems = normalizeIssueItems(request.getItems());
-        validateIssuePayload(order, request.getReason(), normalizedItems, images);
+        List<DeliveryIssueItemRequest> requestItems = normalizeRequestItems(request.getItems());
+        validateIssuePayload(order, request.getReason(), requestItems, images);
+
+        List<DeliveryIssueItemRequest> normalizedItems = normalizeIssueItems(order, request.getReason(), requestItems);
+        if (requiresIssueItems(request.getReason()) && normalizedItems.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Issue này cần ít nhất 1 sản phẩm thực sự bị ảnh hưởng");
+        }
 
         int totalQuantity = calculateTotalQuantity(order);
         int affectedQuantity = calculateAffectedQuantity(normalizedItems);
@@ -133,53 +140,6 @@ public class DeliveryIssueService {
         Authentication auth = getAuthentication();
         requireAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER);
         return toResponse(findIssue(issueId));
-    }
-
-    @Transactional
-    public DeliveryIssueResponse uploadIssueImages(Integer issueId, List<MultipartFile> images) {
-        Authentication auth = getAuthentication();
-        DeliveryIssue issue = findIssue(issueId);
-
-        validateIssueImagePermission(issue, auth);
-        validateIssueStillEditable(issue);
-
-        List<MultipartFile> validImages = images == null ? List.of() : images.stream()
-                .filter(file -> file != null && !file.isEmpty())
-                .toList();
-
-        if (validImages.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần ít nhất 1 ảnh hợp lệ để tải lên");
-        }
-
-        List<String> currentImageUrls = readImageUrls(issue);
-        for (MultipartFile image : validImages) {
-            UploadedFileResult uploadResult = fileUploadService.uploadFileWithMetadata(image, DELIVERY_ISSUE_IMAGE_FOLDER);
-            currentImageUrls.add(uploadResult.getSecureUrl());
-        }
-        issue.setImageUrls(writeImageUrls(currentImageUrls));
-
-        return toResponse(issue);
-    }
-
-    @Transactional
-    public DeliveryIssueResponse deleteIssueImage(Integer issueId, String imageUrl) {
-        Authentication auth = getAuthentication();
-        DeliveryIssue issue = findIssue(issueId);
-
-        validateIssueImagePermission(issue, auth);
-        validateIssueStillEditable(issue);
-
-        if (imageUrl == null || imageUrl.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageUrl không được để trống");
-        }
-
-        List<String> currentImageUrls = readImageUrls(issue);
-        boolean removed = currentImageUrls.removeIf(url -> imageUrl.equals(url));
-        if (!removed) {
-            throw new ResourceNotFoundException("Không tìm thấy ảnh của delivery issue");
-        }
-        issue.setImageUrls(writeImageUrls(currentImageUrls));
-        return toResponse(issue);
     }
 
     @Transactional
@@ -268,9 +228,6 @@ public class DeliveryIssueService {
             DeliveryIssueReason reason,
             List<DeliveryIssueItemRequest> items,
             List<MultipartFile> images) {
-        int totalQuantity = calculateTotalQuantity(order);
-        int affectedQuantity = calculateAffectedQuantity(items);
-
         if (requiresEvidence(reason) && !hasAnyValidImage(images)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -283,16 +240,23 @@ public class DeliveryIssueService {
                     "Issue này bắt buộc phải khai báo danh sách sản phẩm bị ảnh hưởng");
         }
 
-        validateIssueItemsAgainstOrder(order, items);
+        validateIssueItemsAgainstOrder(order, reason, items);
 
-        if (!items.isEmpty() && affectedQuantity > totalQuantity) {
+        List<DeliveryIssueItemRequest> normalizedItems = normalizeIssueItems(order, reason, items);
+        int totalQuantity = calculateTotalQuantity(order);
+        int affectedQuantity = calculateAffectedQuantity(normalizedItems);
+
+        if (!normalizedItems.isEmpty() && affectedQuantity > totalQuantity) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Tổng số lượng bị ảnh hưởng không được vượt quá tổng số lượng của đơn");
         }
     }
 
-    private void validateIssueItemsAgainstOrder(StoreOrder order, List<DeliveryIssueItemRequest> items) {
+    private void validateIssueItemsAgainstOrder(
+            StoreOrder order,
+            DeliveryIssueReason reason,
+            List<DeliveryIssueItemRequest> items) {
         if (items.isEmpty()) {
             return;
         }
@@ -320,6 +284,29 @@ public class DeliveryIssueService {
                         HttpStatus.BAD_REQUEST,
                         "Sản phẩm " + item.getProductId() + " không tồn tại trong đơn hàng này");
             }
+
+            if (usesWholeLineQuantity(reason)) {
+                continue;
+            }
+
+            if (usesReceivedQuantity(reason) && item.getReceivedQuantity() != null) {
+                if (item.getReceivedQuantity() > orderedQuantity) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Số lượng nhận của sản phẩm " + item.getProductId()
+                                    + " không được vượt quá số lượng đã đặt");
+                }
+                continue;
+            }
+
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                String message = usesReceivedQuantity(reason)
+                        ? "Sản phẩm " + item.getProductId()
+                        + " phải có quantity hoặc receivedQuantity hợp lệ"
+                        : "Sản phẩm " + item.getProductId() + " phải có quantity hợp lệ";
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+            }
+
             if (item.getQuantity() > orderedQuantity) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
@@ -480,6 +467,16 @@ public class DeliveryIssueService {
         return reason == DeliveryIssueReason.DAMAGED;
     }
 
+    private boolean usesReceivedQuantity(DeliveryIssueReason reason) {
+        return reason == DeliveryIssueReason.DAMAGED
+                || reason == DeliveryIssueReason.MISSING_ITEMS
+                || reason == DeliveryIssueReason.QUALITY_FAILED;
+    }
+
+    private boolean usesWholeLineQuantity(DeliveryIssueReason reason) {
+        return reason == DeliveryIssueReason.WRONG_ITEMS;
+    }
+
     private int calculateTotalQuantity(StoreOrder order) {
         return order.getOrderDetails().stream()
                 .map(OrderDetail::getQuantity)
@@ -494,13 +491,50 @@ public class DeliveryIssueService {
                 .reduce(0, Integer::sum);
     }
 
-    private List<DeliveryIssueItemRequest> normalizeIssueItems(List<DeliveryIssueItemRequest> items) {
+    private List<DeliveryIssueItemRequest> normalizeRequestItems(List<DeliveryIssueItemRequest> items) {
         if (items == null) {
             return List.of();
         }
         return items.stream()
-                .filter(item -> item != null && item.getProductId() != null && item.getQuantity() != null && item.getQuantity() > 0)
+                .filter(item -> item != null && item.getProductId() != null)
                 .toList();
+    }
+
+    private List<DeliveryIssueItemRequest> normalizeIssueItems(
+            StoreOrder order,
+            DeliveryIssueReason reason,
+            List<DeliveryIssueItemRequest> items) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Integer, Integer> orderedQuantities = order.getOrderDetails().stream()
+                .collect(Collectors.toMap(
+                        detail -> detail.getProduct().getProductId(),
+                        OrderDetail::getQuantity,
+                        Integer::sum));
+
+        List<DeliveryIssueItemRequest> normalizedItems = new ArrayList<>();
+        for (DeliveryIssueItemRequest item : items) {
+            Integer orderedQuantity = orderedQuantities.get(item.getProductId());
+            if (orderedQuantity == null) {
+                continue;
+            }
+
+            Integer affectedQuantity;
+            if (usesWholeLineQuantity(reason)) {
+                affectedQuantity = orderedQuantity;
+            } else if (usesReceivedQuantity(reason) && item.getReceivedQuantity() != null) {
+                affectedQuantity = orderedQuantity - item.getReceivedQuantity();
+            } else {
+                affectedQuantity = item.getQuantity();
+            }
+
+            if (affectedQuantity != null && affectedQuantity > 0) {
+                normalizedItems.add(new DeliveryIssueItemRequest(item.getProductId(), affectedQuantity, null));
+            }
+        }
+        return normalizedItems;
     }
 
     private List<DeliveryIssueItemRequest> readIssueItems(DeliveryIssue issue) {
@@ -647,25 +681,6 @@ public class DeliveryIssueService {
         Integer orderStoreId = order.getStore() == null ? null : order.getStore().getStoreId();
         if (userStoreId == null || !userStoreId.equals(orderStoreId)) {
             throw new AccessDeniedException("You can only access your store orders");
-        }
-    }
-
-    private void validateIssueImagePermission(DeliveryIssue issue, Authentication auth) {
-        if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
-            return;
-        }
-        if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
-            validateStoreStaffOwnership(issue.getStoreOrder(), auth.getName());
-            return;
-        }
-        throw new AccessDeniedException("Bạn không có quyền cập nhật ảnh của issue này");
-    }
-
-    private void validateIssueStillEditable(DeliveryIssue issue) {
-        if (issue.getStatus() != DeliveryIssueStatus.PENDING_REVIEW) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Chỉ được cập nhật ảnh khi delivery issue đang ở trạng thái PENDING_REVIEW");
         }
     }
 

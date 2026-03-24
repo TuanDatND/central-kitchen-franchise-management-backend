@@ -14,7 +14,9 @@ public class DeliveryIssueItemRequest {
     @NotNull(message = "productId không được để trống")
     private Integer productId;
 
-    @NotNull(message = "quantity không được để trống")
     @Min(value = 1, message = "quantity phải lớn hơn 0")
     private Integer quantity;
+
+    @Min(value = 0, message = "receivedQuantity không được nhỏ hơn 0")
+    private Integer receivedQuantity;
 }
