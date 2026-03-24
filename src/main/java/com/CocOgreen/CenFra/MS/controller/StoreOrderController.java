@@ -151,10 +151,15 @@ public class StoreOrderController {
     @Operation(summary = "Gom đơn thủ công", description = "SUPPLY_COORDINATOR chọn danh sách orderIds, hệ thống tự nhóm các đơn đó theo sản phẩm rồi chuyển các đơn tham gia sang CONSOLIDATED.")
     public ResponseEntity<ApiResponse<ConsolidatedOrderResponse>> consolidateManually(
             @Valid @RequestBody ConsolidateOrdersRequest request) {
+        ConsolidatedOrderResponse response = service.consolidateOrdersManually(request.getOrderIds());
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        service.consolidateOrdersManually(request.getOrderIds()),
-                        "Gom đơn thủ công thành công"
+                        response,
+                        String.format(
+                                "Gom đơn thủ công thành công: đã xử lý %d đơn với %d nhóm sản phẩm",
+                                response.getTotalOrders(),
+                                response.getProducts() == null ? 0 : response.getProducts().size()
+                        )
                 )
         );
     }

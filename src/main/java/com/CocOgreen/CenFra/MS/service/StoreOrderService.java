@@ -215,7 +215,7 @@ public class StoreOrderService {
         validateConsolidator(auth);
 
         List<StoreOrder> orders = storeOrderRepository.findDistinctByStatusWithDetails(StoreOrderStatus.APPROVED);
-        return consolidateEligibleOrders(orders, auth, "Cần ít nhất 2 đơn APPROVED để gom tự động");
+        return consolidateEligibleOrders(orders, auth, 2, "Cần ít nhất 2 đơn APPROVED để gom tự động");
     }
 
     @Transactional
@@ -228,8 +228,10 @@ public class StoreOrderService {
                 .distinct()
                 .toList();
 
-        if (uniqueOrderIds.size() < 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần ít nhất 2 orderIds hợp lệ để gom thủ công");
+        if (uniqueOrderIds.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Gom đơn thủ công yêu cầu ít nhất 1 orderId hợp lệ");
         }
 
         List<StoreOrder> orders = storeOrderRepository.findDistinctByOrderIdInWithDetails(uniqueOrderIds);
@@ -238,7 +240,11 @@ public class StoreOrderService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Một hoặc nhiều đơn hàng không tồn tại");
         }
 
-        return consolidateEligibleOrders(orders, auth, "Cần ít nhất 2 đơn APPROVED để gom thủ công");
+        return consolidateEligibleOrders(
+                orders,
+                auth,
+                1,
+                "Gom đơn thủ công yêu cầu ít nhất 1 đơn ở trạng thái APPROVED");
     }
 
     @Transactional
@@ -347,13 +353,14 @@ public class StoreOrderService {
     private ConsolidatedOrderResponse consolidateEligibleOrders(
             List<StoreOrder> orders,
             Authentication auth,
+            int minimumEligibleOrders,
             String minimumOrdersMessage) {
 
         List<StoreOrder> eligibleOrders = orders.stream()
                 .filter(order -> order.getStatus() == StoreOrderStatus.APPROVED)
                 .toList();
 
-        if (eligibleOrders.size() < 2) {
+        if (eligibleOrders.size() < minimumEligibleOrders) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, minimumOrdersMessage);
         }
 
