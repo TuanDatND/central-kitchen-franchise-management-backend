@@ -17,4 +17,6 @@ public interface ExportNoteRepository extends JpaRepository<ExportNote, Integer>
     Page<ExportNote> searchByExportCode(@org.springframework.data.repository.query.Param("exportCode") String exportCode, Pageable pageable);
 
     List<ExportNote> findByStatus(ExportStatus status);
+
+    List<ExportNote> findByStoreOrder_OrderId(Integer orderId);
 }

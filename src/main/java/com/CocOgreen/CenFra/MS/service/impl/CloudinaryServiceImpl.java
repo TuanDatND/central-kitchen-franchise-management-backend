@@ -1,5 +1,6 @@
 package com.CocOgreen.CenFra.MS.service.impl;
 
+import com.CocOgreen.CenFra.MS.dto.UploadedFileResult;
 import com.CocOgreen.CenFra.MS.exception.FileUploadException;
 import com.CocOgreen.CenFra.MS.service.FileUploadService;
 import com.cloudinary.Cloudinary;
@@ -24,28 +25,40 @@ public class CloudinaryServiceImpl implements FileUploadService {
     private final Cloudinary cloudinary;
 
     @Override
-    public String uploadFile(MultipartFile file) {
+    public UploadedFileResult uploadFileWithMetadata(MultipartFile file, String folder) {
         try {
             if (file.isEmpty()) {
                 throw new FileUploadException("File gửi lên không được trống.");
             }
 
-            // Sinh random ID tránh trùng lặp tên file
-            String publicId = UUID.randomUUID().toString();
+            String publicIdSeed = UUID.randomUUID().toString();
 
-            // Tiến hành upload lên Cloudinary
-            log.info("Bắt đầu upload ảnh lên Cloudinary...");
+            log.info("Bắt đầu upload ảnh lên Cloudinary vào folder {}...", folder);
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                    "public_id", publicId,
-                    "folder", "products"
+                    "public_id", publicIdSeed,
+                    "folder", folder
             ));
 
             String secureUrl = (String) result.get("secure_url");
+            String publicId = (String) result.get("public_id");
             log.info("Upload thành công. URL: {}", secureUrl);
-            return secureUrl;
+            return new UploadedFileResult(secureUrl, publicId);
         } catch (IOException e) {
             log.error("Lỗi khi upload file lên Cloudinary", e);
             throw new FileUploadException("Có lỗi xảy ra khi xử lý file tải lên: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void deleteFile(String publicId) {
+        try {
+            if (publicId == null || publicId.isBlank()) {
+                return;
+            }
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException e) {
+            log.error("Lỗi khi xóa file khỏi Cloudinary", e);
+            throw new FileUploadException("Có lỗi xảy ra khi xóa file trên Cloudinary: " + e.getMessage(), e);
         }
     }
 }

@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/delivery-issues")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Dev 1 - Delivery Issue Management", description = "APIs xử lý issue khi store từ chối nhận hàng và coordinator review để giao bù hoặc giao lại.")
+@Tag(name = "Dev 1 - Delivery Issue Management", description = "APIs xử lý issue khi store từ chối nhận hàng và coordinator review để giao bù hoặc chốt đơn cũ.")
 public class DeliveryIssueController {
 
     private final DeliveryIssueService deliveryIssueService;
@@ -53,7 +53,7 @@ public class DeliveryIssueController {
 
     @PostMapping("/{id}/review")
     @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR','MANAGER')")
-    @Operation(summary = "Review delivery issue", description = "Coordinator review issue: approve để tạo đơn giao bù mới, hoặc reject để giao lại trên đơn cũ.")
+    @Operation(summary = "Review delivery issue", description = "Coordinator review issue: approve để tạo đơn giao bù mới, hoặc reject để chốt đơn cũ là đã nhận/hoàn tất. Reject không được truyền newDeliveryDate.")
     public ResponseEntity<ApiResponse<DeliveryIssueResponse>> review(
             @PathVariable Integer id,
             @Valid @RequestBody ReviewDeliveryIssueRequest request) {

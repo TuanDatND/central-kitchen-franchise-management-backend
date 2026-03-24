@@ -8,16 +8,19 @@ import com.CocOgreen.CenFra.MS.dto.OrderActionResponseDTO;
 import com.CocOgreen.CenFra.MS.dto.OrderLineRequest;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.UpdateStoreOrderRequest;
+import com.CocOgreen.CenFra.MS.entity.ExportNote;
 import com.CocOgreen.CenFra.MS.entity.OrderDetail;
 import com.CocOgreen.CenFra.MS.entity.Product;
 import com.CocOgreen.CenFra.MS.entity.Store;
 import com.CocOgreen.CenFra.MS.entity.StoreOrder;
 import com.CocOgreen.CenFra.MS.entity.User;
+import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.enums.RoleName;
 import com.CocOgreen.CenFra.MS.enums.StoreStatus;
 import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.exception.ResourceNotFoundException;
 import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
+import com.CocOgreen.CenFra.MS.repository.ExportNoteRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreRepository;
@@ -58,6 +61,7 @@ public class StoreOrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final StoreOrderMapper storeOrderMapper;
+    private final ExportNoteRepository exportNoteRepository;
 
     @Transactional
     public StoreOrderDTO createOrder(CreateStoreOrderRequest request) {
@@ -112,15 +116,19 @@ public class StoreOrderService {
     @Transactional(readOnly = true)
     public Page<StoreOrderDTO> listOrders(StoreOrderStatus status, int page, int size) {
         Authentication auth = getAuthentication();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
-
         Page<StoreOrder> orders;
         if (hasAnyRole(auth, RoleName.FRANCHISE_STORE_STAFF)) {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
             Store store = resolveStoreForStaff(auth.getName());
             orders = status == null
                     ? storeOrderRepository.findByStore_StoreId(store.getStoreId(), pageable)
                     : storeOrderRepository.findByStore_StoreIdAndStatus(store.getStoreId(), status, pageable);
         } else if (hasAnyRole(auth, RoleName.SUPPLY_COORDINATOR, RoleName.MANAGER)) {
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.ASC, "deliveryDate")
+                            .and(Sort.by(Sort.Direction.ASC, "orderDate")));
             orders = status == null
                     ? storeOrderRepository.findAll(pageable)
                     : storeOrderRepository.findByStatus(status, pageable);
@@ -196,6 +204,7 @@ public class StoreOrderService {
         StoreOrderStatus previousStatus = order.getStatus();
         User actorUser = getCurrentUser(auth.getName());
         order.markAsReceived();
+        markExportNotesShipped(orderId);
         return buildActionResponse(order, previousStatus, actorUser, LocalDateTime.now(), null,
                 "Xác nhận nhận hàng thành công");
     }
@@ -277,6 +286,19 @@ public class StoreOrderService {
     private StoreOrder findOrder(Integer id) {
         return storeOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+    }
+
+    private void markExportNotesShipped(Integer orderId) {
+        List<ExportNote> exportNotes = exportNoteRepository.findByStoreOrder_OrderId(orderId);
+        if (exportNotes.isEmpty()) {
+            return;
+        }
+
+        exportNotes.stream()
+                .filter(note -> note.getStatus() != ExportStatus.CANCEL)
+                .forEach(note -> note.setStatus(ExportStatus.SHIPPED));
+
+        exportNoteRepository.saveAll(exportNotes);
     }
 
     private Authentication getAuthentication() {
