@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.service;
 
 import com.CocOgreen.CenFra.MS.dto.request.ManuOrderRequest;
+import com.CocOgreen.CenFra.MS.dto.request.ManualManuOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.response.ManuOrderResponse;
 import com.CocOgreen.CenFra.MS.entity.ManufacturingOrder;
 import com.CocOgreen.CenFra.MS.entity.Product;
@@ -77,6 +78,45 @@ public class ManufacturingOrderService {
         return savedOrders.stream()
                 .map(manufacturingOrderMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Tạo một lệnh sản xuất thủ công (Đơn lẻ). 
+     * Dùng cho việc bổ sung kho, thay thế lô hàng hết hạn.
+     * 
+     * @param request Dữ liệu đầu vào cho lệnh sản xuất đơn lẻ (1 sản phẩm)
+     * @return ManuOrderResponse của lệnh sản xuất mới được tạo
+     */
+    @Transactional
+    public ManuOrderResponse createManualOrder(ManualManuOrderRequest request) {
+        // 1. Lấy thông tin user hiện tại
+        String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUserName(currentUserName)
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy người dùng hiện tại trong hệ thống: " + currentUserName));
+
+        // 2. Kiểm tra xem Product có tồn tại hay không
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy sản phẩm với ID: " + request.getProductId()));
+
+        // 3. Khởi tạo ManufacturingOrder mới
+        ManufacturingOrder order = new ManufacturingOrder();
+        order.setProduct(product);
+        order.setQuantityPlanned(request.getQuantityPlanned());
+        
+        // Sinh mã lệnh MO-MANUAL-Timestamp
+        order.setOrderCode("MO-MANUAL-" + System.currentTimeMillis());
+        order.setStatus(ManuOrderStatus.PLANNED);
+        order.setStartDate(Instant.now()); // Thời gian hệ thống (Instant)
+        order.setCreatedBy(currentUser);
+        // Lưu ý: Trường `note` của Request không được Entity hỗ trợ, nhưng Request lưu lại để track API parameters nếu cần.
+
+        // 4. Lưu vào database
+        ManufacturingOrder savedOrder = manufacturingOrderRepository.save(order);
+
+        // 5. Trả về response (DTO trả về)
+        return manufacturingOrderMapper.toResponse(savedOrder);
     }
 
     /**
