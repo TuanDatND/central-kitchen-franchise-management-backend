@@ -28,6 +28,7 @@ import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ExportNoteRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
+import com.CocOgreen.CenFra.MS.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -42,6 +43,7 @@ public class  ExportNoteService {
     private final StoreOrderRepository storeOrderRepository;
     private final InventoryTransactionService auditService;
     private final StoreOrderMapper storeOrderMapper;
+    private final UserRepository userRepository;
 
     public PagedData<ExportNoteDto> findAll(Pageable pageable) {
         Page<ExportNote> page = exportNoteRepository.findAll(pageable);
@@ -134,6 +136,16 @@ public class  ExportNoteService {
             exportNote.setStatus(ExportStatus.READY);
             exportNote.setStoreOrder(storeOrder);
             exportNote.setExportCode("PX-" + System.currentTimeMillis() + "-" + storeOrderId);
+            
+            try {
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                    userRepository.findByUserName(auth.getName()).ifPresent(exportNote::setCreatedBy);
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
             List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
             List<ExportItem> exportItems = new ArrayList<>();
 
@@ -191,6 +203,15 @@ public class  ExportNoteService {
         exportNote.setExportCode("PX-" + System.currentTimeMillis());
         exportNote.setStatus(ExportStatus.READY);
         exportNote.setStoreOrder(storeOrder);
+
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                userRepository.findByUserName(auth.getName()).ifPresent(exportNote::setCreatedBy);
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
 
         List<ExportItem> exportItems = new ArrayList<>();
 

@@ -14,6 +14,7 @@ import com.CocOgreen.CenFra.MS.entity.ProductBatch;
 import com.CocOgreen.CenFra.MS.enums.TransactionType;
 import com.CocOgreen.CenFra.MS.mapper.InventoryTransactionMapper;
 import com.CocOgreen.CenFra.MS.repository.InventoryTransactionRepository;
+import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -22,6 +23,7 @@ public class InventoryTransactionService {
 
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final InventoryTransactionMapper inventoryTransactionMapper;
+    private final UserRepository userRepository;
 
 //    @Transactional(propagation = Propagation.MANDATORY)
 //    // Propagation.MANDATORY: Đảm bảo hàm này phải chạy trong một Transaction có sẵn
@@ -32,6 +34,16 @@ public class InventoryTransactionService {
         tx.setTransactionType(type);
         tx.setReferenceCode(refCode);
         tx.setNote(note);
+
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                userRepository.findByUserName(auth.getName()).ifPresent(tx::setUser);
+            }
+        } catch (Exception e) {
+            // Ignore in case of no security context (e.g., background jobs)
+        }
+
         inventoryTransactionRepository.save(tx);
     }
 
