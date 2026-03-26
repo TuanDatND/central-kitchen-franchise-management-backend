@@ -19,6 +19,7 @@ import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
 import com.CocOgreen.CenFra.MS.dto.StoreOrderDTO;
 import com.CocOgreen.CenFra.MS.dto.request.ManualExportRequest;
+import com.CocOgreen.CenFra.MS.dto.request.SurplusExportRequest;
 import com.CocOgreen.CenFra.MS.dto.response.ExportPreviewResponse;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
 import com.CocOgreen.CenFra.MS.service.ExportNoteService;
@@ -89,6 +90,20 @@ public class ExportNoteController {
     public ResponseEntity<ApiResponse<List<ExportNoteDto>>> createAutoNote(@RequestBody List<Integer> storeOrderIds) {
         List<ExportNoteDto> response = exportNoteService.createExportFromOrder(storeOrderIds);
         return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Tự Động Thành Công Cho Các Đơn Hàng"));
+    }
+
+    @Operation(
+        summary = "Tạo Phiếu xuất kho thặng dư (Surplus Export)",
+        description = "Dành cho trường hợp nhân viên xuất kho hàng dư ngoài đơn hàng, "
+                    + "hoặc điều chỉnh đồng bộ tồn kho. "
+                    + "Không cần StoreOrder. "
+                    + "Ghi log riêng với loại giao dịch SURPLUS_EXPORT để phân biệt trong báo cáo."
+    )
+    @PostMapping("/createSurplusNote")
+    public ResponseEntity<ApiResponse<ExportNoteDto>> createSurplusNote(
+            @RequestBody SurplusExportRequest request) {
+        ExportNoteDto response = exportNoteService.createSurplusExport(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tạo phiếu xuất kho thặng dư thành công"));
     }
 
     @Operation(summary = "Lấy thông tin chi tiết Phiếu xuất kho", description = "Tìm kiếm và trả về chi tiết của phần tử phiếu xuất theo ID.")
