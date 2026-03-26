@@ -1,6 +1,7 @@
 package com.CocOgreen.CenFra.MS.controller;
 
 import com.CocOgreen.CenFra.MS.dto.request.ManuOrderRequest;
+import com.CocOgreen.CenFra.MS.dto.request.ManualManuOrderRequest;
 import com.CocOgreen.CenFra.MS.dto.response.ManuOrderResponse;
 import com.CocOgreen.CenFra.MS.service.ManufacturingOrderService;
 import com.CocOgreen.CenFra.MS.dto.ApiResponse;
@@ -37,6 +38,18 @@ public class ManufacturingOrderController {
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(ApiResponse.success(responseList, "Tạo các lệnh sản xuất thành công"));
         }
+
+        // 2. API Tạo lệnh sản xuất thủ công (Đơn lẻ - Bù đắp kho)
+        @PostMapping("/manual")
+        @PreAuthorize("hasAnyRole('SUPPLY_COORDINATOR')")
+        @Operation(summary = "Tạo lệnh sản xuất thủ công (Đơn lẻ)", description = "Dành cho SUPPLY_COORDINATOR tạo lệnh sản xuất đơn lẻ để bù đắp kho.")
+        public ResponseEntity<ApiResponse<ManuOrderResponse>> createManualOrder(
+                        @Valid @RequestBody ManualManuOrderRequest request) {
+                ManuOrderResponse response = manufacturingOrderService.createManualOrder(request);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.success(response, "Manual manufacturing order created successfully"));
+        }
+
 
         // 2. API Lấy danh sách lệnh (Dashboard cho Bếp)
         @GetMapping
