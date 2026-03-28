@@ -74,6 +74,11 @@ public class DeliveryIssueService {
                     HttpStatus.BAD_REQUEST,
                     "Đơn hàng này đã có một issue đang chờ coordinator xử lý");
         }
+        if (deliveryIssueRepository.existsByStoreOrder_OrderIdAndStatus(orderId, DeliveryIssueStatus.APPROVED)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Đơn hàng này đã được xử lý issue trước đó. Vui lòng theo dõi đơn giao bù hoặc đơn thay thế");
+        }
 
         List<DeliveryIssueItemRequest> requestItems = normalizeRequestItems(request.getItems());
         validateIssuePayload(order, request.getReason(), requestItems, images);
@@ -164,7 +169,7 @@ public class DeliveryIssueService {
             validateSelectedResolution(issue, selectedResolution);
             issue.setSelectedResolution(selectedResolution);
 
-            originalOrder.markDeliveryFailed();
+            updateOriginalOrderStatusAfterApproval(originalOrder, selectedResolution);
 
             StoreOrder replacementOrder = createReplacementOrder(originalOrder, issue, selectedResolution,
                     request.getNewDeliveryDate());
@@ -365,6 +370,18 @@ public class DeliveryIssueService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Hướng xử lý không hợp lệ với loại issue hiện tại");
+        }
+    }
+
+    private void updateOriginalOrderStatusAfterApproval(
+            StoreOrder originalOrder,
+            DeliveryIssueResolution resolution) {
+        switch (resolution) {
+            case REPLACE_FULL, REJECT_DELIVERY -> originalOrder.markDeliveryFailed();
+            case REPLACE_PARTIAL, BACKORDER, REDELIVER_CORRECT_ITEMS -> originalOrder.setStatus(StoreOrderStatus.DONE);
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Không hỗ trợ cập nhật trạng thái đơn cũ với hướng xử lý hiện tại");
         }
     }
 
