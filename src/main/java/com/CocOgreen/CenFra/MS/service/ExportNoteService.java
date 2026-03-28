@@ -28,6 +28,7 @@ import com.CocOgreen.CenFra.MS.mapper.StoreOrderMapper;
 import com.CocOgreen.CenFra.MS.repository.ExportNoteRepository;
 import com.CocOgreen.CenFra.MS.repository.ProductBatchRepository;
 import com.CocOgreen.CenFra.MS.repository.StoreOrderRepository;
+import com.CocOgreen.CenFra.MS.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -42,6 +43,7 @@ public class  ExportNoteService {
     private final StoreOrderRepository storeOrderRepository;
     private final InventoryTransactionService auditService;
     private final StoreOrderMapper storeOrderMapper;
+    private final UserRepository userRepository;
 
     public PagedData<ExportNoteDto> findAll(Pageable pageable) {
         Page<ExportNote> page = exportNoteRepository.findAll(pageable);
@@ -134,6 +136,16 @@ public class  ExportNoteService {
             exportNote.setStatus(ExportStatus.READY);
             exportNote.setStoreOrder(storeOrder);
             exportNote.setExportCode("PX-" + System.currentTimeMillis() + "-" + storeOrderId);
+            
+            try {
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                    userRepository.findByUserName(auth.getName()).ifPresent(exportNote::setCreatedBy);
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
             List<OrderDetail> storeOrdersDetail = storeOrder.getOrderDetails();
             List<ExportItem> exportItems = new ArrayList<>();
 
@@ -192,6 +204,15 @@ public class  ExportNoteService {
         exportNote.setStatus(ExportStatus.READY);
         exportNote.setStoreOrder(storeOrder);
 
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                userRepository.findByUserName(auth.getName()).ifPresent(exportNote::setCreatedBy);
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+
         List<ExportItem> exportItems = new ArrayList<>();
 
         for (ManualExportRequest.Item selection : request.getSelectedBatches()) {
@@ -229,7 +250,93 @@ public class  ExportNoteService {
     }
 
     /**
+     * Tạo phiếu xuất kho thặng dư (Surplus Export) — KHÔNG cần StoreOrder.
+     *
+     * Dùng trong các trường hợp:
+     * - Nhân viên kho lấy hàng dư so với thực tế kiểm kê.
+     * - Điều chỉnh đồng bộ tồn kho hệ thống với thực tế kho.
+     *
+     * Toàn bộ logic được bọc trong @Transactional: nếu bất kỳ bước nào thất bại,
+     * cả phiếu xuất và log giao dịch đều bị rollback.
+     *
+     * Authorization: SUPPLY_COORDINATOR
+     *
+     * @param request Danh sách lô hàng cần xuất và lý do xuất kho thặng dư.
+     * @return ExportNoteDto chứa thông tin phiếu xuất vừa tạo.
+     */
+    @Transactional
+    public ExportNoteDto createSurplusExport(com.CocOgreen.CenFra.MS.dto.request.SurplusExportRequest request) {
+        // Validate: danh sách items không được rỗng
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Danh sách lô hàng xuất không được để trống.");
+        }
+
+        // Tạo phiếu xuất không gắn StoreOrder (storeOrder = null)
+        ExportNote exportNote = new ExportNote();
+        exportNote.setExportCode("PX-SUR-" + System.currentTimeMillis());
+        exportNote.setStatus(ExportStatus.READY);
+        // storeOrder để null — đây là xuất kho thặng dư độc lập
+
+        // Gán người tạo từ SecurityContext (người đang đăng nhập)
+        try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().equals("anonymousUser")) {
+                userRepository.findByUserName(auth.getName()).ifPresent(exportNote::setCreatedBy);
+            }
+        } catch (Exception e) {
+            // Bỏ qua nếu không có context bảo mật
+        }
+
+        List<ExportItem> exportItems = new ArrayList<>();
+
+        // Duyệt qua từng lô hàng mà user yêu cầu xuất
+        for (com.CocOgreen.CenFra.MS.dto.request.SurplusExportRequest.Item selection : request.getItems()) {
+            // Tìm lô hàng trong DB
+            ProductBatch batch = productBatchRepository.findById(selection.getBatchId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Không tìm thấy ProductBatch ID: " + selection.getBatchId()));
+
+            int requestedQty = selection.getQuantity();
+
+            // Kiểm tra tồn kho: không cho phép xuất quá số lượng hiện có
+            if (batch.getCurrentQuantity() < requestedQty) {
+                throw new com.CocOgreen.CenFra.MS.exception.InventoryOutboundException(
+                        "Lô hàng " + batch.getBatchCode()
+                        + " không đủ tồn kho. Kho hiện tại: " + batch.getCurrentQuantity()
+                        + " | Yêu cầu xuất: " + requestedQty);
+            }
+
+            // Trừ tồn kho thực tế của lô hàng
+            batch.setCurrentQuantity(batch.getCurrentQuantity() - requestedQty);
+
+            // Tạo chi tiết phiếu xuất
+            ExportItem item = new ExportItem();
+            item.setExportNote(exportNote);
+            item.setProductBatch(batch);
+            item.setQuantity(requestedQty);
+            exportItems.add(item);
+
+            // Ghi log vào sổ cái với TransactionType.SURPLUS_EXPORT
+            // để phân biệt với xuất theo StoreOrder thông thường
+            auditService.logTransaction(
+                    batch,
+                    -requestedQty,
+                    TransactionType.SURPLUS_EXPORT,
+                    exportNote.getExportCode(),
+                    "Xuất kho thặng dư. Lý do: " + request.getReason());
+        }
+
+        // Lưu toàn bộ phiếu xuất và các chi tiết vào DB (cascade)
+        exportNote.setItems(exportItems);
+        exportNote = exportNoteRepository.save(exportNote);
+
+        return exportNoteMapper.toDto(exportNote);
+    }
+
+    /**
      * XEM TRƯỚC (PREVIEW) kế hoạch xuất kho theo thuật toán FEFO.
+
      *
      * Phương thức này KHÔNG lưu bất kỳ dữ liệu nào vào database.
      * Mục đích: cho phép người dùng (SUPPLY_COORDINATOR) xem trước
