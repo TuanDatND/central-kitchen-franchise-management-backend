@@ -18,5 +18,12 @@ public interface ExportNoteRepository extends JpaRepository<ExportNote, Integer>
 
     List<ExportNote> findByStatus(ExportStatus status);
 
+    /**
+     * Lấy danh sách ExportNote theo trạng thái VÀ chỉ những phiếu gắn với StoreOrder.
+     * Mục đích: loại trừ Surplus Export (phiếu xuất thặng dư có storeOrder = null)
+     * khỏi danh sách sẵn sàng giao hàng — tránh nhân viên nhầm lẫn khi tạo Delivery.
+     */
+    List<ExportNote> findByStatusAndStoreOrderIsNotNull(ExportStatus status);
+
     List<ExportNote> findByStoreOrder_OrderId(Integer orderId);
 }

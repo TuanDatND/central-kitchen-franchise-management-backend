@@ -44,8 +44,18 @@ public class DeliveryService {
     // ObjectMapper của Jackson để chuyển đổi dữ liệu sang định dạng JSON
     private final ObjectMapper objectMapper;
 
+    /**
+     * Lấy danh sách các phiếu xuất sẵn sàng vận chuyển (status = READY).
+     *
+     * Quan trọng: CHỈ trả về phiếu xuất gắn với StoreOrder (storeOrder IS NOT NULL).
+     * Surplus Export (xuất kho thặng dư) có storeOrder = null nên bị loại khỏi đây —
+     * Surplus Export không cần quy trình giao hàng, không được tạo Delivery.
+     */
     public List<ExportNoteDto> getReadyExportNote(){
-        return exportNoteRepository.findByStatus(ExportStatus.READY).stream().map(exportNoteMapper::toDto).collect(Collectors.toList());
+        return exportNoteRepository.findByStatusAndStoreOrderIsNotNull(ExportStatus.READY)
+                .stream()
+                .map(exportNoteMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -84,9 +94,19 @@ public class DeliveryService {
 
             for (ExportNote exportNote : exportNotes) {
 
+                // Kiểm tra trạng thái: chỉ chấp nhận phiếu xuất ở READY
                 if (exportNote.getStatus() != ExportStatus.READY) {
                     throw new IllegalStateException("Phiếu xuất " + exportNote.getExportCode() + " không ở trạng thái READY.");
                 }
+
+                // Chặn Surplus Export (xuất kho thặng dư) — không có StoreOrder,
+                // không thuộc quy trình giao hàng, không được thêm vào Delivery.
+                if (exportNote.getStoreOrder() == null) {
+                    throw new IllegalStateException(
+                            "Phiếu xuất " + exportNote.getExportCode()
+                            + " là phiếu xuất thặng dư (Surplus Export) — không thể thêm vào chuyến giao hàng.");
+                }
+
                 exportNote.setDelivery(savedDelivery);
                 exportNote.setStatus(ExportStatus.PLANNED);
             }
