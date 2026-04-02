@@ -274,7 +274,7 @@ public class  ExportNoteService {
         // Tạo phiếu xuất không gắn StoreOrder (storeOrder = null)
         ExportNote exportNote = new ExportNote();
         exportNote.setExportCode("PX-SUR-" + System.currentTimeMillis());
-        exportNote.setStatus(ExportStatus.READY);
+        exportNote.setStatus(ExportStatus.SHIPPED);
         // storeOrder để null — đây là xuất kho thặng dư độc lập
 
         // Gán người tạo từ SecurityContext (người đang đăng nhập)

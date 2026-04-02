@@ -76,7 +76,7 @@ public class InventoryReportService {
                     long days = java.time.temporal.ChronoUnit.DAYS.between(now, batch.getExpiryDate());
                     if (days < 0) {
                         expiredCount++;
-                    } else if (days <= 7) {
+                    } else if (days <= 3) {
                         nearExpiryCount++;
                     }
                 }
