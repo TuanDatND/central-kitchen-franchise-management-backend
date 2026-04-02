@@ -1,5 +1,15 @@
 package com.CocOgreen.CenFra.MS.service;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.CocOgreen.CenFra.MS.dto.DeliveryDto;
 import com.CocOgreen.CenFra.MS.dto.ExportNoteDto;
 import com.CocOgreen.CenFra.MS.dto.PagedData;
@@ -10,6 +20,7 @@ import com.CocOgreen.CenFra.MS.entity.ExportNote;
 import com.CocOgreen.CenFra.MS.entity.User;
 import com.CocOgreen.CenFra.MS.enums.DeliveryStatus;
 import com.CocOgreen.CenFra.MS.enums.ExportStatus;
+import com.CocOgreen.CenFra.MS.enums.StoreOrderStatus;
 import com.CocOgreen.CenFra.MS.mapper.DeliveryMapper;
 import com.CocOgreen.CenFra.MS.mapper.ExportNoteMapper;
 import com.CocOgreen.CenFra.MS.repository.DeliveryRepository;
@@ -18,18 +29,10 @@ import com.CocOgreen.CenFra.MS.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -237,6 +240,27 @@ public class DeliveryService {
 
         if (delivery.getStatus() != DeliveryStatus.IN_TRANSIT) {
             throw new IllegalStateException("Chỉ hoàn tất được các chuyến đang ở trạng thái IN_TRANSIT (đang giao).");
+        }
+
+        // ======================================================================
+        // TẤT CẢ StoreOrder liên kết với Delivery này
+        // phải đạt trạng thái DONE (cửa hàng đã xác nhận nhận hàng) trước
+        // khi chuyến giao hàng được phép kết thúc.
+        // ======================================================================
+        if (delivery.getExportNotes() != null) {
+            for (ExportNote note : delivery.getExportNotes()) {
+                // Bỏ qua phiếu xuất không gắn StoreOrder (Surplus Export — không áp dụng quy tắc này)
+                if (note.getStoreOrder() == null) continue;
+
+                StoreOrderStatus orderStatus = note.getStoreOrder().getStatus();
+                if (orderStatus != StoreOrderStatus.DONE) {
+                    throw new IllegalStateException(
+                            "Không thể hoàn tất chuyến giao hàng. Đơn hàng ["
+                            + note.getStoreOrder().getOrderCode()
+                            + "] chưa được cửa hàng xác nhận nhận hàng (trạng thái hiện tại: "
+                            + orderStatus + "). Yêu cầu: DONE.");
+                }
+            }
         }
 
         delivery.setStatus(DeliveryStatus.COMPLETED);
