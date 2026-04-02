@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -87,6 +88,7 @@ public class ExportNoteController {
 
     @Operation(summary = "Tạo Phiếu xuất kho tự động (Auto FEFO) cho nhiều đơn", description = "Hệ thống tự động quét và xuất kho theo FEFO dựa trên danh sách các Store Order ID.")
     @PostMapping("/createAutoNote")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
     public ResponseEntity<ApiResponse<List<ExportNoteDto>>> createAutoNote(@RequestBody List<Integer> storeOrderIds) {
         List<ExportNoteDto> response = exportNoteService.createExportFromOrder(storeOrderIds);
         return ResponseEntity.ok(ApiResponse.success(response, "Xuất Kho Tự Động Thành Công Cho Các Đơn Hàng"));
@@ -100,6 +102,7 @@ public class ExportNoteController {
                     + "Ghi log riêng với loại giao dịch SURPLUS_EXPORT để phân biệt trong báo cáo."
     )
     @PostMapping("/createSurplusNote")
+    @PreAuthorize("hasRole('SUPPLY_COORDINATOR')")
     public ResponseEntity<ApiResponse<ExportNoteDto>> createSurplusNote(
             @RequestBody SurplusExportRequest request) {
         ExportNoteDto response = exportNoteService.createSurplusExport(request);
